@@ -1,0 +1,13 @@
+boto3
+flask
+flask_restful
+webargs
+sqlalchemy==1.2.12
+flask_sqlalchemy==2.3.2
+flask_migrate
+marshmallow
+marshmallow_sqlalchemy
+gunicorn
+s3fs
+psycopg2
+pytz

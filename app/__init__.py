@@ -1,0 +1,44 @@
+import sys
+import os
+import flask_restful
+import flask_sqlalchemy
+import flask_migrate
+import pandas as pd
+
+from flask import Flask, make_response, redirect, send_from_directory, jsonify, request, current_app
+
+## Initialize these objects here
+# so they are accessible by `from app import db`
+db = flask_sqlalchemy.SQLAlchemy()
+migrate = flask_migrate.Migrate()
+
+## Init and Config
+def create_app():
+    app = Flask(__name__, static_folder="build")
+
+    if os.environ.get('FLASK_ENV') == 'development':
+        app.config.from_object('app.config.DevelopmentConfig')
+    else:
+        app.config.from_object('app.config.ProductionConfig')
+    
+    ## Database
+    db.init_app(app)
+    migrate.init_app(app, db)
+
+
+    ## Serve static files in production
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve(path):
+        if path != "" and os.path.exists("/app/build/" + path):
+            return send_from_directory('build', path)
+        else:
+            return send_from_directory('build', 'index.html')
+
+    ## API setup
+    apis = flask_restful.Api(app, prefix="/api/v1")
+    
+    from app.api import api
+    apis.add_resource(api.MyApi, '/hello')
+
+    return app
