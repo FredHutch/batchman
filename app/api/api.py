@@ -1,24 +1,25 @@
-from flask import jsonify, make_response, abort, current_app, redirect, request
-from flask_restful import Resource
 
-from webargs import fields
-from webargs.flaskparser import use_args
-from webargs.flaskparser import parser
+from flask.views import MethodView
+from flask_rest_api import Blueprint, abort
 
-@parser.error_handler
-def handle_parse_error(error, *args, **kwargs):
-    print(error)
-    abort(422, messages=error.messages, exc=error)
+WorkflowApi = Blueprint(
+    'WorkflowApi', __name__,
+    description='Create and monitor Nextflow workflows.'
+)
 
 
-class MyApi(Resource):
-    def get(self):        
+@WorkflowApi.route('/workflow')
+class ListWorkflows(MethodView):
+    def get(self):
+        """List all workflows"""
         return {"msg": "hello world."}
 
-    @use_args({
-        'int_arg': fields.Int(missing=5),
-        'str_arg': fields.Str(missing="None"),
-    })
-    def post(self, args):
-        print(args)
-        return args
+    def post(self):
+        """Submit new workflow for execution"""
+        return {"msg": "hello world."}        
+
+@WorkflowApi.route('/workflow/<string:id>')
+class ListWorkflows(MethodView):
+    def get(self, id ):
+        """Get information on workflow by workflow id"""
+        return {"msg": "hello %s" % id}

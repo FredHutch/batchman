@@ -1,9 +1,8 @@
 import sys
 import os
-import flask_restful
+import flask_rest_api
 import flask_sqlalchemy
 import flask_migrate
-import pandas as pd
 
 from flask import Flask, make_response, redirect, send_from_directory, jsonify, request, current_app
 
@@ -36,9 +35,9 @@ def create_app():
             return send_from_directory('build', 'index.html')
 
     ## API setup
-    apis = flask_restful.Api(app, prefix="/api/v1")
+    apis = flask_rest_api.Api(app)
     
     from app.api import api
-    apis.add_resource(api.MyApi, '/hello')
+    apis.register_blueprint(api.WorkflowApi, url_prefix=app.config["API_PREFIX"])
 
     return app

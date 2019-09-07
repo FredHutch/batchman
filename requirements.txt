@@ -9,5 +9,5 @@ marshmallow
 marshmallow_sqlalchemy
 gunicorn
 s3fs
-psycopg2
 pytz
+flask_rest_api
