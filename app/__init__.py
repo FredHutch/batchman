@@ -39,5 +39,6 @@ def create_app():
     
     from app.api import api
     apis.register_blueprint(api.WorkflowApi, url_prefix=app.config["API_PREFIX"])
+    apis.register_blueprint(api.WeblogApi, url_prefix=app.config["API_PREFIX"])
 
     return app
