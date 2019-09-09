@@ -23,7 +23,9 @@ def create_app():
     ## Database
     db.init_app(app)
     migrate.init_app(app, db)
-
+    
+    ## Import models so flask-migrate can see
+    from app.models import WeblogEvent
 
     ## Serve static files in production
     @app.route('/', defaults={'path': ''})
@@ -37,8 +39,8 @@ def create_app():
     ## API setup
     apis = flask_rest_api.Api(app)
     
-    from app.api import api
+    from app.api import api, weblog
     apis.register_blueprint(api.WorkflowApi, url_prefix=app.config["API_PREFIX"])
-    apis.register_blueprint(api.WeblogApi, url_prefix=app.config["API_PREFIX"])
+    apis.register_blueprint(weblog.WeblogApi, url_prefix=app.config["API_PREFIX"])
 
     return app

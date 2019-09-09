@@ -24,16 +24,3 @@ class ListWorkflows(MethodView):
         """Get information on workflow by workflow id"""
         return {"msg": "hello %s" % id}
 
-
-
-WeblogApi = Blueprint(
-    'WeblogApi', __name__,
-    description='Endpoint for nextflow weblog.'
-)
-
-
-@WeblogApi.route('/weblog')
-class ReceiveWeblog(MethodView):
-    def post(self):
-        """Receives web log messages from nextflow"""
-        return {"msg": "hello world."} 
