@@ -1,5 +1,18 @@
 import os
+import secrets
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+def get_api_key():
+    # read api.key file or generate new
+    try:
+        with open('./api.key', 'r') as f:
+            return f.read().rstrip()
+    except FileNotFoundError:
+        key = secrets.token_urlsafe(40) # generate 40-byte base64 encoded token
+        with open('./api.key', 'w') as f:
+            f.write(key)
+        return key
+
 
 class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -8,6 +21,8 @@ class Config(object):
     )
     OPENAPI_VERSION = '3.0.2'
     API_PREFIX = '/api/v1'
+
+    API_KEY = get_api_key()
 
     # ECS/Batch configuration
     ECS_CLUSTER = 'aws-batch-ce_Batch_1031105a-6a87-3673-8196-1d5723fb2991'

@@ -3,3 +3,4 @@ __pycache__
 *.sublime-workspace
 app/app.db
 .DS_Store
+api.key
