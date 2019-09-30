@@ -4,54 +4,54 @@
 
 /api/v1...
 
-/workflows 
+`/workflows`
 	POST: Send git url, file(s), nextflow command + options, json parameters object. 
 		  Adds data to workflow executions table
 		  Executes workflow, returns 201 + workflow execution ID
 	GET:  List of (paginated) executed workflows
 
 also could have:
-- /workflows/running
-- /workflows/queued
-- /workflows/failed
+- `/workflows/running`
+- `/workflows/queued`
+- `/workflows/failed`
 
-/workflows/<id>
+`/workflows/<id>`
 	GET:    metadata around workflow execution
 	DELETE: kill workflow
 
-/workflows/<id>/log
+`/workflows/<id>/log`
 	GET: main nextflow log 
 
-/workflows/<id>/status
+`/workflows/<id>/status`
     GET: some sort of status?
 
-/workflows/<id>/tasks
+`/workflows/<id>/tasks`
 	GET: list of tasks that have been executed
 
-/workflows/<id>/tasks/<id>
+`/workflows/<id>/tasks/<id>`
 	GET: metadata for task
 
-/workflows/<id>/tasks/logs
+`/workflows/<id>/tasks/logs`
 	GET: concatenated logs for all tasks?
 
-/workflows/<id>/tasks/<id>/logs
+`/workflows/<id>/tasks/<id>/logs`
 	GET: logs specifically for task
 
 
 ## Nextflow facing:
-api/v1/weblog
+`api/v1/weblog?key=$API_KEY`
 	POST: receives data from nextflow logging 
 
 
 ## Future
 
-/workflows/<id>/tasks/<id>/metrics
+`/workflows/<id>/tasks/<id>/metrics`
 	GET: metrics specifically for task
 
-/workflow/<id>/dag(.html|.pdf|.dot)
+`/workflows/<id>/dag(.html|.pdf|.dot)`
 	GET: returns DAG
 
-/workflow/<id>/reports/(timeline|resource|summary)(.html|.pdf|.dot)
+`/workflows/<id>/reports/(timeline|resource|summary)(.html|.pdf|.dot)`
 	GET: return formatted report(s), e.g., timeline, resource, etc.
 
 
