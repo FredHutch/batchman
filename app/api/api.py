@@ -79,7 +79,11 @@ class ListWorkflows(MethodView):
                 "containerOverrides": [
                     {
                         "name": "nextflow",
-                        "command": ["runner.sh", workflow_s3_loc, config_s3_loc]
+                        "command": ["runner.sh", workflow_s3_loc, config_s3_loc],
+                        "environment": [{
+                            "name": "LOGGING_API_KEY",
+                            "value": current_app.config["API_KEY"]
+                        }],
                     }
                 ]
             },
