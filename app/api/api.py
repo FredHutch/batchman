@@ -5,9 +5,9 @@ from flask.views import MethodView
 from flask_rest_api import Blueprint, abort
 from marshmallow import Schema, INCLUDE, EXCLUDE, fields
 
-ecs_client = boto3.client('ecs')
-s3_client = boto3.client('s3')
-logs_client = boto3.client('logs')
+ecs_client = boto3.client('ecs', region_name='us-west-2')
+s3_client = boto3.client('s3', region_name='us-west-2')
+logs_client = boto3.client('logs', region_name='us-west-2')
 
 class CreateWorkflowArgs(Schema):
     # The nextflow_workflow and nextflow_config fields
