@@ -18,8 +18,11 @@ class CreateWorkflowArgs(Schema):
         unknown = INCLUDE    
     nextflow_version = fields.String(location="form")
     nextflow_arguments = fields.String(location="form")
-    nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
-    nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
+    nextflow_workflow = fields.String(location="form")
+    nextflow_config = fields.String(location="form")
+    # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
+    # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
+
 
 class CreateWorkflowReturn(Schema):
     class Meta:
@@ -66,6 +69,7 @@ class ListWorkflows(MethodView):
         # elif
         # -- URL link; probably download and upload to s3 as above
         else:
+            print(args)
             return "Invalid nextflow commands", 500
         
         print(workflow_key, config_key)
