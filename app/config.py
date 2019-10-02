@@ -29,7 +29,7 @@ class Config(object):
     # ECS/Batch configuration
     ECS_CLUSTER = 'AWSBatchComputeEnvironm-35d3ca9f6f7513f_Batch_2f7e7fc2-020c-3f0e-b238-f05b6a17e74a'
     ECS_SUBNETS = ["subnet-0dd677ebd49d24d08"]
-    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:1'
+    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:2'
     NEXTFLOW_S3_TEMP = 'uwlm-personal'
 
 
