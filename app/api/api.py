@@ -72,10 +72,9 @@ class ListWorkflows(MethodView):
             print(args)
             return "Invalid nextflow commands", 500
         
-        print(workflow_key, config_key)
         workflow_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], workflow_key)
         config_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], config_key)
-        weblog_endpoint = "https://batchman-api.labmed.uw.edu/api/v1/weblog?key=%s" % current_app.config["API_KEY"]
+
         res = ecs_client.run_task(
             cluster=current_app.config["ECS_CLUSTER"],
             taskDefinition=current_app.config["NEXTFLOW_TASK_DEFINITION"],
@@ -86,7 +85,7 @@ class ListWorkflows(MethodView):
                         "command": ["runner.sh", workflow_s3_loc, config_s3_loc],
                         "environment": [{
                             "name": "BATCHMAN_LOG_ENDPOINT",
-                            "value": weblog_endpoint
+                            "value": current_app.config["BATCHMAN_LOG_ENDPOINT"]
                         }],
                     }
                 ]
