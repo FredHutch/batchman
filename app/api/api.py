@@ -60,8 +60,8 @@ class ListWorkflows(MethodView):
         # 1. If a workflow and config file was uploaded
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
             uuid_key = self._generate_key()
-            workflow_key = "nextflow_scripts/%s/main.nf" % uuid_key
-            config_key = "nextflow_scripts/%s/nextflow.config" % uuid_key
+            workflow_key = "nextflow_scripts/%s/%s/main.nf" % (uuid_key[0:2], uuid_key)
+            config_key = "nextflow_scripts/%s/%s/nextflow.config" % (uuid_key[0:2], uuid_key)
             self._upload_to_s3(workflow_key, args["nextflow_workflow"])
             self._upload_to_s3(config_key, args["nextflow_config"])
         # elif
