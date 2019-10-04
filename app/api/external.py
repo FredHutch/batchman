@@ -41,7 +41,12 @@ class ReceiveWeblog(MethodView):
 
 class EcsLogSchema(Schema):
     class Meta:
-        unknown = INCLUDE    
+        unknown = INCLUDE   
+    detail_type = fields.String()
+    account = fields.String()
+    time = fields.DateTim()
+    resources = fields.List(fields.String())
+    detail = fields.Mapping()
 
 @ExternalApi.route('/ecslog')
 class ReceiveWeblog(MethodView):
