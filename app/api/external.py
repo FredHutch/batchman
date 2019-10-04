@@ -62,16 +62,17 @@ class ReceiveWeblog(MethodView):
         """
         print(data)
 
-        # update WorkflowRunnerExecution records (or add new status records?)
-        taskArn = data['detail']['tasks'][0]['taskArn'].split(":task/")[1]
-        try:
-            db_res = db.session.query(WorkflowRunnerExecution)\
-                .filter(WorkflowRunnerExecution.taskArn==taskArn).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            abort(404)
-
-        if "lastStatus" in data['detail']:
-             db_res.info["lastStatus"] = data['detail']["lastStatus"]
-        db.session.add(db_res)
-        db.session.commit()
+        if 'taskArn' in data['detail']:
+            taskArn = data['detail']['taskArn'].split(":task/")[1]
+            try:
+                db_res = db.session.query(WorkflowRunnerExecution)\
+                    .filter(WorkflowRunnerExecution.taskArn==taskArn).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                abort(404)
+            if "lastStatus" in data['detail']:
+                db_res.info["lastStatus"] = data['detail']["lastStatus"]
+                db.session.add(db_res)
+                db.session.commit()
+        
         return None
+        
