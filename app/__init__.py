@@ -26,7 +26,7 @@ def create_app():
     migrate.init_app(app, db)
     
     ## Import models so flask-migrate can see
-    from app.models import WeblogEvent
+    from app.models import WeblogEvent, WorkflowRunnerExecution
 
     ## Serve static files in production
     # @app.route('/', defaults={'path': ''})

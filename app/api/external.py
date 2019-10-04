@@ -6,6 +6,8 @@ from app.models import WeblogEvent
 from app.common import require_apikey
 from app import db
 
+from app.models import WorkflowRunnerExecution
+
 ExternalApi = Blueprint(
     'ExternalApi', __name__,
     description='Endpoints for nextflow weblogging, ecs logging and other externally facing endponts.'
@@ -44,7 +46,7 @@ class EcsLogSchema(Schema):
         unknown = INCLUDE   
     detail_type = fields.String()
     account = fields.String()
-    time = fields.DateTim()
+    time = fields.DateTime()
     resources = fields.List(fields.String())
     detail = fields.Mapping()
 
@@ -60,5 +62,17 @@ class ReceiveWeblog(MethodView):
         Requires key=API_KEY in query args.
         """
         print(data)
-        # todo -- update Workflow records (or add new status records?)
+
+        # update WorkflowRunnerExecution records (or add new status records?)
+        taskArn = data['detail']['tasks'][0]['taskArn'].split(":task/")[1]
+        try:
+            db_res = db.session.query(WorkflowRunnerExecution)\
+                .filter(WorkflowRunnerExecution.taskArn==taskArn).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            abort(404)
+
+        if "lastStatus" in data['detail']:
+             db_res.info["lastStatus"] = data['detail']["lastStatus"]
+        db.session.add(db_res)
+        db.session.commit()
         return None

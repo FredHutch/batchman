@@ -1,9 +1,13 @@
 import boto3
 import uuid
-from flask import current_app
+import sqlalchemy
+from flask import current_app, jsonify
 from flask.views import MethodView
 from flask_rest_api import Blueprint, abort
 from marshmallow import Schema, INCLUDE, EXCLUDE, fields
+
+from app.models import WorkflowRunnerExecution
+from app import db
 
 ecs_client = boto3.client('ecs', region_name='us-west-2')
 s3_client = boto3.client('s3', region_name='us-west-2')
@@ -31,13 +35,20 @@ class CreateWorkflowReturn(Schema):
     taskLastStatus = fields.String()
     containerLastStatus = fields.String()
 
+
+class WorkflowRunnerExecutionSchema(Schema):
+    id = fields.Int()
+    taskArn = fields.String()
+    createdAt = fields.DateTime()
+    info = fields.Raw()
+
 WorkflowApi = Blueprint(
     'WorkflowApi', __name__,
     description='Create and monitor Nextflow workflows.'
 )
 
 @WorkflowApi.route('/workflow')
-class ListWorkflows(MethodView):
+class WorkflowList(MethodView):
     def _generate_key(self):
         return str(uuid.uuid4())
 
@@ -48,9 +59,10 @@ class ListWorkflows(MethodView):
             Key=s3_key
         )
 
+    @WorkflowApi.response(WorkflowRunnerExecutionSchema(many=True))
     def get(self):
         """List all workflows"""
-        return {"msg": "hello world."}
+        return db.session.query(WorkflowRunnerExecution).all()
 
     @WorkflowApi.arguments(CreateWorkflowArgs)
     @WorkflowApi.response(code=201)
@@ -99,25 +111,44 @@ class ListWorkflows(MethodView):
             },
         )
 
-        taskArn = res['tasks'][0]['taskArn']
-        taskLastStatus = res['tasks'][0]['lastStatus']
-        containerLastStatus = res['tasks'][0]['containers'][0]['lastStatus']
+        taskArn = res['tasks'][0]['taskArn'].split(":task/")[1]
+        # save to database -- must serialize the date to string first
+        infoJson = res['tasks'][0].copy()
+        infoJson['createdAt'] = str(infoJson['createdAt'])
+
+        e = WorkflowRunnerExecution(
+            taskArn=taskArn,
+            createdAt=res['tasks'][0]['createdAt'],
+            info=infoJson
+        )
+        db.session.add(e)
+        db.session.commit()
 
         return {
             "taskArn": taskArn,
-            "taskLastStatus": taskLastStatus,
-            "containerLastStatus": containerLastStatus,
+            "taskLastStatus": res['tasks'][0]['lastStatus'],
+            "containerLastStatus": res['tasks'][0]['containers'][0]['lastStatus'],
         }
 
 @WorkflowApi.route('/workflow/<string:id>')
-class ListWorkflows(MethodView):
+class Workflow(MethodView):
+    @WorkflowApi.response(WorkflowRunnerExecutionSchema)
     def get(self, id ):
         """Get information on workflow by workflow id"""
-        res = ecs_client.describe_tasks(
-            cluster=current_app.config["ECS_CLUSTER"],
-            tasks=[id]
-        )
-        return res
+        try:
+            db_res = db.session.query(WorkflowRunnerExecution)\
+                .filter(WorkflowRunnerExecution.taskArn==id).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            abort(404)
+
+        # TODO: Only do this when ?refresh=True
+        # api_res = ecs_client.describe_tasks(
+        #     cluster=current_app.config["ECS_CLUSTER"],
+        #     tasks=[id]
+        # )["tasks"][0]
+        # if "lastStatus" in api_res:
+        #     db_res.info["lastStatus"] = api_res["lastStatus"]
+        return db_res
 
 
 @WorkflowApi.route('/workflow/<string:id>/logs')

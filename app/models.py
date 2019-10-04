@@ -11,3 +11,10 @@ class WeblogEvent(db.Model):
     utcTime = db.Column(db.DateTime())
     metadataField = db.Column(db.JSON())
     trace = db.Column(db.JSON())
+
+class WorkflowRunnerExecution(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    taskArn = db.Column(db.String())
+    createdAt = db.Column(db.DateTime())
+    info = db.Column(db.JSON())
+
