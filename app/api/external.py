@@ -43,7 +43,7 @@ class EcsLogSchema(Schema):
     class Meta:
         unknown = INCLUDE    
 
-@ExternalApi.route('/weblog')
+@ExternalApi.route('/ecslog')
 class ReceiveWeblog(MethodView):
     @ExternalApi.arguments(EcsLogSchema)
     @ExternalApi.arguments(ApiKeyArgs, location='query')
