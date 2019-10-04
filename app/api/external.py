@@ -60,7 +60,6 @@ class ReceiveWeblog(MethodView):
         Receives web log messages from AWS Lambdas triggered by ECS events.
         Requires key=API_KEY in query args.
         """
-        print(data)
 
         if 'taskArn' in data['detail']:
             taskArn = data['detail']['taskArn'].split(":task/")[1]
