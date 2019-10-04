@@ -1,3 +1,4 @@
+import sqlalchemy
 from flask.views import MethodView
 from flask_rest_api import Blueprint, abort
 from marshmallow import Schema, INCLUDE, fields
@@ -42,8 +43,6 @@ class ReceiveWeblog(MethodView):
 
 
 class EcsLogSchema(Schema):
-    class Meta:
-        unknown = INCLUDE   
     detail_type = fields.String()
     account = fields.String()
     time = fields.DateTime()
