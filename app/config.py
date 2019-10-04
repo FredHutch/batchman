@@ -22,9 +22,10 @@ class Config(object):
     OPENAPI_VERSION = '3.0.2'
     API_PREFIX = '/api/v1'
 
-    # configure weblog api
+    # configure external api
+    EXTERNAL_API_PREFIX = '/api/external'
     API_KEY = get_api_key()
-    BATCHMAN_LOG_ENDPOINT = "https://batchman-api.labmed.uw.edu/api/v1/weblog?key=%s" % API_KEY
+    BATCHMAN_LOG_ENDPOINT = "https://batchman-api.labmed.uw.edu/api/external/weblog?key=%s" % API_KEY
 
     # ECS/Batch configuration
     ECS_CLUSTER = 'AWSBatchComputeEnvironm-35d3ca9f6f7513f_Batch_2f7e7fc2-020c-3f0e-b238-f05b6a17e74a'
