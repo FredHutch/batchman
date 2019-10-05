@@ -162,3 +162,36 @@ class WorkflowLogs(MethodView):
         )
         return res
 
+@WorkflowApi.route('/workflow/<string:id>/status')
+class WorkflowStatus(MethodView):
+    def get(self, id):
+        """Get latest workflow status"""
+        res = db.session.execute("""
+            SELECT distinct on (weblog_event."runId") * 
+            FROM weblog_event
+            WHERE
+                weblog_event."runId" = :runId
+                AND weblog_event."metadataField" is not null
+            ORDER BY weblog_event."runId", id desc;
+        """, {'runId': id})
+        res = [dict(row) for row in res]
+        return jsonify(res[0])
+
+
+@WorkflowApi.route('/workflow/<string:id>/tasks')
+class WorkflowTaskStatus(MethodView):
+    def get(self, id):
+        """Get tasks for workflow"""
+        res = db.session.execute("""
+            SELECT distinct on (task_id)
+            trace->>'task_id' as task_id,
+            *
+            FROM weblog_event
+            WHERE
+                weblog_event."runId" = :runId
+                AND weblog_event.trace is not null
+            ORDER BY task_id, id desc;
+        """, {'runId': id})
+        res = [dict(row) for row in res]
+        return jsonify(res)
+
