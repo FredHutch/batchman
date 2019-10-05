@@ -24,23 +24,31 @@ class NextflowWeblogSchema(Schema):
     metadata = fields.Mapping(attribute='metadataField') # renamed, as `metadata` is reserved in SQLAlchemy
     trace = fields.Mapping()
 
-class ApiKeyArgs(Schema):
+class WeblogArgs(Schema):
     key = fields.String()
+    taskArn = fields.String()
 
 @ExternalApi.route('/weblog')
 class ReceiveWeblog(MethodView):
     @ExternalApi.arguments(NextflowWeblogSchema)
-    @ExternalApi.arguments(ApiKeyArgs, location='query')
+    @ExternalApi.arguments(WeblogArgs, location='query')
     @ExternalApi.response(code=201)
     @require_apikey
     def post(self, data, query_args):
-        """Receives web log messages from nextflow; requires key=API_KEY in query args"""
+        """
+        Receives web log messages from nextflow.
+        Requires key=API_KEY and taskArn=UUID (corresponding to 
+        nextflow-runner taskArn) in query args."""
+        data["workflowTaskArn"] = query_args["taskArn"]
+        print(data)
         e = WeblogEvent(**data)
         db.session.add(e)
         db.session.commit()
         return None
 
 
+class ApiKeyArgs(Schema):
+    key = fields.String()
 
 class EcsLogSchema(Schema):
     detail_type = fields.String()

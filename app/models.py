@@ -7,6 +7,7 @@ from sqlalchemy import JSON
 
 class WeblogEvent(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
+    workflowTaskArn = db.Column(db.String())
     runName = db.Column(db.String())
     runId = db.Column(db.String())
     event = db.Column(db.String())
