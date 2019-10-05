@@ -10,6 +10,7 @@ from app.models import WorkflowRunnerExecution
 from app import db
 
 ecs_client = boto3.client('ecs', region_name='us-west-2')
+batch_client = boto3.client('batch', region_name='us-west-2')
 s3_client = boto3.client('s3', region_name='us-west-2')
 logs_client = boto3.client('logs', region_name='us-west-2')
 
@@ -179,7 +180,7 @@ class WorkflowStatus(MethodView):
 
 
 @WorkflowApi.route('/workflow/<string:id>/tasks')
-class WorkflowTaskStatus(MethodView):
+class WorkflowTasks(MethodView):
     def get(self, id):
         """Get tasks for workflow"""
         res = db.session.execute("""
@@ -194,4 +195,50 @@ class WorkflowTaskStatus(MethodView):
         """, {'runId': id})
         res = [dict(row) for row in res]
         return jsonify(res)
+
+
+@WorkflowApi.route('/workflow/<string:run_id>/tasks/<string:task_id>')
+class WorkflowTaskStatus(MethodView):
+    def get(self, run_id, task_id):
+        """Get all status updates for specific task of workflow"""
+        res = db.session.execute("""
+            SELECT
+            trace->>'task_id' as task_id,
+            *
+            FROM weblog_event
+            WHERE
+                weblog_event."runId" = :runId
+                AND
+                trace->>'task_id' = :taskId
+            ORDER BY id desc;
+        """, {'runId': run_id, 'taskId': task_id})
+        res = [dict(row) for row in res]
+        return jsonify(res)
+
+
+@WorkflowApi.route('/workflow/<string:run_id>/tasks/<string:task_id>/logs')
+class WorkflowTaskLogs(MethodView):
+    def get(self, run_id, task_id):
+        """Get logs for specific task"""
+        res = db.session.execute("""
+            SELECT
+            trace->>'task_id' as task_id,
+            trace->>'native_id' as native_id
+            FROM weblog_event
+            WHERE
+                weblog_event."runId" = :runId
+                AND
+                trace->>'task_id' = :taskId
+            ORDER BY id desc;
+        """, {'runId': run_id, 'taskId': task_id})
+        res = [dict(row) for row in res]
+        native_id = res[0]["native_id"]
+        print(native_id)
+        log_stream_name = batch_client.describe_jobs(jobs=[native_id])['jobs'][0]['container']['logStreamName']
+        res = logs_client.get_log_events(
+            logGroupName='/aws/batch/job',
+            logStreamName=log_stream_name,
+            startFromHead=False
+        )
+        return res
 
