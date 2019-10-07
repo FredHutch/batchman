@@ -149,20 +149,23 @@ class Workflow(MethodView):
     @WorkflowApi.response(WorkflowRunnerExecutionSchema)
     def get(self, id ):
         """Get information on workflow by workflow id"""
-        try:
-            db_res = db.session.query(WorkflowRunnerExecution)\
-                .filter(WorkflowRunnerExecution.taskArn==id).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            abort(404)
-
-        # TODO: Only do this when ?refresh=True
-        # api_res = ecs_client.describe_tasks(
-        #     cluster=current_app.config["ECS_CLUSTER"],
-        #     tasks=[id]
-        # )["tasks"][0]
-        # if "lastStatus" in api_res:
-        #     db_res.info["lastStatus"] = api_res["lastStatus"]
-        return db_res
+        # try:
+        #     db_res = db.session.query(WorkflowRunnerExecution)\
+        #         .filter(WorkflowRunnerExecution.taskArn==id).one()
+        # except sqlalchemy.orm.exc.NoResultFound:
+        #     abort(404)
+        
+        res = db.session.execute("""
+            SELECT DISTINCT ON (we."workflowTaskArn") 
+            wre.*, we."metadataField", we."runName", we."utcTime"
+            FROM workflow_runner_execution AS wre
+            JOIN weblog_event AS we ON wre."taskArn" = we."workflowTaskArn"
+            WHERE "taskArn" = :taskArn
+            AND we."metadataField" IS NOT NULL
+            ORDER BY we."workflowTaskArn", we.id DESC;
+            """, {'taskArn': id})
+        res = [dict(row) for row in res]
+        return jsonify(res[0])
 
 
 @WorkflowApi.route('/workflow/<string:id>/logs')
