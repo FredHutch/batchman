@@ -1,6 +1,10 @@
 import React from "react";
 
 import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Button from "react-bootstrap/Button";
+
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import BootstrapTable from "react-bootstrap-table-next";
@@ -17,8 +21,25 @@ const PrettyPrintJson = ({data}) => (
     </pre></div>
 );
 
+const LabeledValue = ({label, value, inline}) => (
+    <div className='labeled-value' style={inline ? {display: "inline-block"} : {}}>
+        <div className='label'>{label}</div>
+        <div className='value'>{value}</div>
+    </div>
+)
 
-function timeConversion(millisec) {
+const LabeledValueList = ({label, values}) => (
+    <div className='labeled-value'>
+        <div className='label'>{label}</div>
+        <table className='label-list'>
+            {Object.keys(values).map((key) => 
+                <tr><td className='label'>{key}</td><td className='value'>{values[key]}</td></tr>
+            )}
+        </table>
+    </div>
+)
+
+const timeConversion = (millisec) => {
         var seconds = (millisec / 1000).toFixed(1);
         var minutes = (millisec / (1000 * 60)).toFixed(1);
         var hours = (millisec / (1000 * 60 * 60)).toFixed(1);
@@ -33,7 +54,8 @@ function timeConversion(millisec) {
         } else {
             return days + " Days"
         }
-    }
+}
+
 const runtimeDisplay = (cell, row) => {
     return row.trace.realtime
         ? timeConversion(row.trace.realtime)
@@ -95,25 +117,89 @@ const TaskTable = ({ data }) => {
 }
 
 function WorkflowDetailView({ runArn }) {
-    document.title = `Workflow Detail - ${runArn}`
+    document.title = "Workflow Detail"
     const [runData, runDataIsLoading, runDataisError] = useFetch(`/api/v1/workflow/${runArn}`);
-    const [taskData, taskDataIsLoading, taskDataisError] = useFetch(`/api/v1/workflow/${runArn}/tasks`);    
+    const [taskData, taskDataIsLoading, taskDataisError] = useFetch(`/api/v1/workflow/${runArn}/tasks`);
+    if (runDataIsLoading || taskDataIsLoading) {
+        return <div>Loading</div>
+    }
+    const statusString = runData.metadataField.workflow.complete
+        ? "COMPLETE" // nextflow finished
+        : runData.metadataField.workflow.start
+            ? "RUNNING" // nextflow is running
+            : runData.info.lastStatus // e.g., "PROVISIONING" from ECS
+
+    const runTime = timeConversion(new Date() - Date.parse(runData.metadataField.workflow.start))
     return (
         <Container fluid style={{minHeight:1800}}>
-        <h2>Workflow Detail - {runArn}</h2>
-            <PrettyPrintJson data={runData} />
-        <h3>Tasks</h3>
-        <Tabs defaultActiveKey="list" id="tasks-detail-tabs" transition={false} >
-          <Tab eventKey="list" title="List">
-            <TaskTable data={taskData} />
-          </Tab>
-          <Tab eventKey="gannt" title="Gannt View">
-            <span>TODO: Gannt Chart</span>
-          </Tab>
-          <Tab eventKey="raw" title="Raw">
-            <PrettyPrintJson data={taskData} />
-          </Tab>
-        </Tabs>
+        <h2>Workflow Detail</h2>
+
+        <Row>
+        <Col md='7' sm="12">
+            <div className="workflow-detail-well" >
+                <Row>
+                    <Col md="4" sm="12">
+                        <LabeledValue label="Run Name" value={
+                            <span>
+                                <b>{runData.metadataField.workflow.runName}</b><br/>
+                                <span style={{color: "#aaa", fontSize: "10pt"}}>ARN: {runData.taskArn}</span>
+                            </span>
+                        } />
+                    </Col>
+                    <Col md="5" sm="12">
+                        <LabeledValue label="Started at" value={runData.createdAt} inline />
+                        {statusString == "COMPLETE" ? <LabeledValue label="Finished at" value="TODO" inline /> : null}
+                        <LabeledValue label="Runtime" value={runTime} inline />
+                    </Col>
+                    <Col md="3" sm="12" style={{textAlign: "right"}}>
+                        <h3 style={{marginTop: 4, marginRight: 10}}>{statusString}</h3>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <LabeledValue label="Nextflow Command" value={<pre>{runData.metadataField.workflow.commandLine}</pre>} />
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <LabeledValue label="Work Directory" value={<pre>{runData.metadataField.workflow.workDir}</pre>} />
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <LabeledValueList label="Workflow Parameters" values={runData.metadataField.parameters} />
+                    </Col>
+                </Row>
+            </div>
+        </Col>
+        <Col md="2">
+
+            <Button variant="outline-primary" style={{width: "100%"}}>
+                View Nextflow Logs
+            </Button>
+            <Button variant="outline-primary mt-3" style={{width: "100%"}}>
+                Open Work Directory
+            </Button>
+            <Button variant="outline-primary mt-3" style={{width: "100%"}}>
+                View Script and Config Files
+            </Button>
+        </Col>
+        </Row>
+        <Row>
+            <Col md="9">
+                <Tabs defaultActiveKey="list" id="tasks-detail-tabs" transition={false} >
+                  <Tab eventKey="list" title="Task List">
+                    <TaskTable data={taskData} />
+                  </Tab>
+                  <Tab eventKey="gannt" title="Gannt View">
+                    <span>TODO: Gannt Chart</span>
+                  </Tab>
+                  <Tab eventKey="raw" title="Raw">
+                    <PrettyPrintJson data={taskData} />
+                  </Tab>
+                </Tabs>
+            </Col>
+        </Row>
         </Container>
     )    
 }

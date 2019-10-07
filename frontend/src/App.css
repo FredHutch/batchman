@@ -2,3 +2,42 @@
   margin-top: 70px;
   width: 100%;
 }
+
+
+
+.workflow-detail-well {
+	border-radius: 4px;
+    border: 2px solid #ddd;
+    margin-bottom: 20px;
+    padding: 10px;
+}
+
+.labeled-value {
+	margin-bottom: 20px;
+  margin-right: 20px;
+}
+
+.labeled-value > div.label {
+	color: #777;
+    font-size: 10pt;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.labeled-value > div.value > pre {
+  white-space: pre-wrap;
+  word-break: keep-all
+}
+
+.labeled-value > table.label-list td.label {
+  padding-right: 30px;
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 10pt;
+  padding-left: 0px;
+}
+
+.labeled-value > table.label-list td.value {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 10pt;
+}
+
