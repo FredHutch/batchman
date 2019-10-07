@@ -28,16 +28,7 @@ def create_app():
     ## Import models so flask-migrate can see
     from app.models import WeblogEvent, WorkflowRunnerExecution
 
-    ## Serve static files in production
-    # @app.route('/', defaults={'path': ''})
-    # @app.route('/<path:path>')
-    # def serve(path):
-    #     if path != "" and os.path.exists("/app/build/" + path):
-    #         return send_from_directory('build', path)
-    #     else:
-    #         return send_from_directory('build', 'index.html')
-
-    @app.route("/")
+    @app.route("/api/submit")
     def home():
         return """
             <h2>Batchman submit job</h2>
@@ -47,6 +38,17 @@ def create_app():
                 <input type="submit" />
             </form>
         """
+
+    # Serve static files in production
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve(path):
+        if path != "" and os.path.exists("/app/build/" + path):
+            return send_from_directory('build', path)
+        else:
+            return send_from_directory('build', 'index.html')
+
+    
     ## API setup
     apis = flask_rest_api.Api(app)
     
