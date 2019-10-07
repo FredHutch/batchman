@@ -80,7 +80,7 @@ const TaskTable = ({ data }) => {
             headerStyle: { width: "10%" }
         },
         {
-            dataField: "trace.process",
+            dataField: "trace.name",
             text: "Process",
             headerStyle: { width: "10%" }
         },
