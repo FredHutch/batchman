@@ -63,7 +63,20 @@ class WorkflowList(MethodView):
     @WorkflowApi.response(WorkflowRunnerExecutionSchema(many=True))
     def get(self):
         """List all workflows"""
-        return db.session.query(WorkflowRunnerExecution).all()
+        res = db.session.execute("""
+        SELECT
+            wre."taskArn", wre."createdAt", 
+            we."runName", 
+            wre.info->>'lastStatus' as runnerTaskStatus, 
+            count(we.trace->>'status' = 'SUBMITTED' OR NULL) submitted_task_count,
+            count(we.trace->>'status' = 'RUNNING' OR NULL) running_task_count,  
+            count(we.trace->>'status' = 'COMPLETED' OR NULL) completed_task_count
+        from workflow_runner_execution as wre 
+            right join weblog_event we on wre."taskArn" = we."workflowTaskArn"
+        group by wre."taskArn", wre."createdAt", we."runName", wre.info->>'lastStatus', we.trace->>'status';
+        """)
+        res = [dict(row) for row in res]
+        return jsonify(res)
 
     @WorkflowApi.arguments(CreateWorkflowArgs)
     @WorkflowApi.response(code=201)

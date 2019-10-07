@@ -38,6 +38,7 @@ class ProductionConfig(Config):
     AUTH_METHOD = 'SAML'
 
 class DevelopmentConfig(Config):
+    SQLALCHEMY_DATABASE_URI= "postgresql://@127.0.0.1/batchman"
     AUTH_METHOD = 'MOCK'
     OPENAPI_URL_PREFIX = '/docs'
     OPENAPI_REDOC_PATH = '/redoc'
