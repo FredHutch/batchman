@@ -40,7 +40,7 @@ class ReceiveWeblog(MethodView):
         Requires key=API_KEY and taskArn=UUID (corresponding to 
         nextflow-runner taskArn) in query args."""
         data["workflowTaskArn"] = query_args["taskArn"]
-        print(data)
+        print(data, flush=True)
         e = WeblogEvent(**data)
         db.session.add(e)
         db.session.commit()
