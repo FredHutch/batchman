@@ -171,7 +171,7 @@ class WorkflowStatus(MethodView):
             SELECT distinct on (weblog_event."runId") * 
             FROM weblog_event
             WHERE
-                weblog_event."runId" = :runId
+                weblog_event."workflowTaskArn" = :runId
                 AND weblog_event."metadataField" is not null
             ORDER BY weblog_event."runId", id desc;
         """, {'runId': id})
@@ -189,7 +189,7 @@ class WorkflowTasks(MethodView):
             *
             FROM weblog_event
             WHERE
-                weblog_event."runId" = :runId
+                weblog_event."workflowTaskArn" = :runId
                 AND weblog_event.trace is not null
             ORDER BY task_id, id desc;
         """, {'runId': id})
@@ -207,7 +207,7 @@ class WorkflowTaskStatus(MethodView):
             *
             FROM weblog_event
             WHERE
-                weblog_event."runId" = :runId
+                weblog_event."workflowTaskArn" = :runId
                 AND
                 trace->>'task_id' = :taskId
             ORDER BY id desc;
@@ -226,7 +226,7 @@ class WorkflowTaskLogs(MethodView):
             trace->>'native_id' as native_id
             FROM weblog_event
             WHERE
-                weblog_event."runId" = :runId
+                weblog_event."workflowTaskArn" = :runId
                 AND
                 trace->>'task_id' = :taskId
             ORDER BY id desc;
