@@ -41,3 +41,21 @@
   font-size: 10pt;
 }
 
+
+.modal-backdrop {
+  opacity: 0.4;
+}
+
+.detail-modal {
+  width: 75vw;
+  max-width: 100vw;
+}
+
+
+.log-table {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 10pt; 
+  white-space: pre-wrap;
+  word-break: keep-all
+}
+

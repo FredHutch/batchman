@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
@@ -12,32 +12,12 @@ import { navigate } from "@reach/router"
 
 import { useFetch } from "../hooks.js";
 
+import {PrettyPrintJson, LabeledValue, LabeledValueList} from "./Widgets.js"
+
+import TaskDetailModal from "./TaskDetailModal.js"
+
 import "bootstrap/dist/css/bootstrap.css";
 import "react-bootstrap-table-next/dist/react-bootstrap-table2.min.css";
-
-const PrettyPrintJson = ({data}) => (
-    <div><pre>
-        { JSON.stringify(data || {}, null, 2) }
-    </pre></div>
-);
-
-const LabeledValue = ({label, value, inline}) => (
-    <div className='labeled-value' style={inline ? {display: "inline-block"} : {}}>
-        <div className='label'>{label}</div>
-        <div className='value'>{value}</div>
-    </div>
-)
-
-const LabeledValueList = ({label, values}) => (
-    <div className='labeled-value'>
-        <div className='label'>{label}</div>
-        <table className='label-list'>
-            {Object.keys(values).map((key) => 
-                <tr><td className='label'>{key}</td><td className='value'>{values[key]}</td></tr>
-            )}
-        </table>
-    </div>
-)
 
 const timeConversion = (millisec) => {
         var seconds = (millisec / 1000).toFixed(1);
@@ -62,7 +42,7 @@ const runtimeDisplay = (cell, row) => {
         : timeConversion(new Date() - row.trace.submit)
 }
 
-const TaskTable = ({ data }) => {
+const TaskTable = ({ data, handleClick }) => {
     const columns = [
         {
             dataField: "id", // primary key
@@ -109,6 +89,9 @@ const TaskTable = ({ data }) => {
                 keyField="id"
                 data={data}
                 columns={columns}
+                rowEvents={{
+                    onClick: (e, row, rowIndex) => handleClick(row)
+                }}
                 bootstrap4={true}
                 bordered={false}
                 condensed
@@ -120,6 +103,8 @@ function WorkflowDetailView({ runArn }) {
     document.title = "Workflow Detail"
     const [runData, runDataIsLoading, runDataisError] = useFetch(`/api/v1/workflow/${runArn}`);
     const [taskData, taskDataIsLoading, taskDataisError] = useFetch(`/api/v1/workflow/${runArn}/tasks`);
+    const [taskModalData, setTaskModalData] = useState(false);
+
     if (runDataIsLoading || taskDataIsLoading) {
         return <div>Loading</div>
     }
@@ -173,7 +158,6 @@ function WorkflowDetailView({ runArn }) {
             </div>
         </Col>
         <Col md="2">
-
             <Button variant="outline-primary" style={{width: "100%"}}>
                 View Nextflow Logs
             </Button>
@@ -189,7 +173,7 @@ function WorkflowDetailView({ runArn }) {
             <Col md="9">
                 <Tabs defaultActiveKey="list" id="tasks-detail-tabs" transition={false} >
                   <Tab eventKey="list" title="Task List">
-                    <TaskTable data={taskData} />
+                    <TaskTable data={taskData} handleClick={setTaskModalData}/>
                   </Tab>
                   <Tab eventKey="gannt" title="Gannt View">
                     <span>TODO: Gannt Chart</span>
@@ -200,6 +184,10 @@ function WorkflowDetailView({ runArn }) {
                 </Tabs>
             </Col>
         </Row>
+        <TaskDetailModal 
+            data={taskModalData}
+            showHandler={setTaskModalData}
+        />
         </Container>
     )    
 }
