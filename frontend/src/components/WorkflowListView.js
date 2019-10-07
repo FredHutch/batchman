@@ -64,12 +64,12 @@ function WorkflowListView(props) {
         <Container fluid>
         <h2>Workflow Executions</h2>
             <BootstrapTable
-                keyField="key"
+                keyField="id"
                 data={data}
                 columns={columns}
                 rowStyle={{cursor: "pointer"}}
                 rowEvents={{
-                    onClick: (e, row, rowIndex) => navigate(`/workflow/${row.taskArn}`)
+                    onClick: (e, row, rowIndex) => navigate(`/workflows/${row.taskArn}`)
                 }}
                 bootstrap4={true}
                 bordered={false}

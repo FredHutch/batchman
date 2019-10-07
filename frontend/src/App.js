@@ -2,7 +2,8 @@ import React, { Component } from "react";
 import { Router } from "@reach/router"
 
 import AppNavbar from "./components/AppNavbar.js";
-import WorkflowListView from "./components/WorkflowListView.js";
+import WorkflowListView from   "./components/WorkflowListView.js";
+import WorkflowDetailView from "./components/WorkflowDetailView.js";
 
 import './App.css';
 
@@ -15,6 +16,7 @@ function App() {
       <div className='offset-top'>
         <Router>
           <WorkflowListView path="/workflows" />
+          <WorkflowDetailView path="/workflows/:runArn" />
         </Router>
       </div>
     </div>
