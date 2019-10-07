@@ -15,7 +15,7 @@ function App() {
       <AppNavbar default />
       <div className='offset-top'>
         <Router>
-          <WorkflowListView path="/workflows" />
+          <WorkflowListView path="/workflows" default/>
           <WorkflowDetailView path="/workflows/:runArn" />
         </Router>
       </div>

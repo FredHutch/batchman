@@ -15,6 +15,7 @@ import { useFetch } from "../hooks.js";
 import {PrettyPrintJson, LabeledValue, LabeledValueList} from "./Widgets.js"
 
 import TaskDetailModal from "./TaskDetailModal.js"
+import NextflowLogModal from "./NextflowLogModal.js"
 
 import "bootstrap/dist/css/bootstrap.css";
 import "react-bootstrap-table-next/dist/react-bootstrap-table2.min.css";
@@ -92,6 +93,8 @@ const TaskTable = ({ data, handleClick }) => {
                 rowEvents={{
                     onClick: (e, row, rowIndex) => handleClick(row)
                 }}
+                rowStyle={{cursor: "pointer"}}
+                hover={true}
                 bootstrap4={true}
                 bordered={false}
                 condensed
@@ -104,6 +107,7 @@ function WorkflowDetailView({ runArn }) {
     const [runData, runDataIsLoading, runDataisError] = useFetch(`/api/v1/workflow/${runArn}`);
     const [taskData, taskDataIsLoading, taskDataisError] = useFetch(`/api/v1/workflow/${runArn}/tasks`);
     const [taskModalData, setTaskModalData] = useState(false);
+    const [nextflowModalData, setNextflowModalData] = useState(false);
 
     if (runDataIsLoading || taskDataIsLoading) {
         return <div>Loading</div>
@@ -158,13 +162,13 @@ function WorkflowDetailView({ runArn }) {
             </div>
         </Col>
         <Col md="2">
-            <Button variant="outline-primary" style={{width: "100%"}}>
+            <Button variant="outline-primary" style={{width: "100%"}} onClick={() => setNextflowModalData({workflowTaskArn: runData.taskArn})} >
                 View Nextflow Logs
             </Button>
-            <Button variant="outline-primary mt-3" style={{width: "100%"}}>
+            <Button variant="outline-primary mt-3" style={{width: "100%"}} disabled>
                 Open Work Directory
             </Button>
-            <Button variant="outline-primary mt-3" style={{width: "100%"}}>
+            <Button variant="outline-primary mt-3" style={{width: "100%"}} disabled>
                 View Script and Config Files
             </Button>
         </Col>
@@ -187,6 +191,10 @@ function WorkflowDetailView({ runArn }) {
         <TaskDetailModal 
             data={taskModalData}
             showHandler={setTaskModalData}
+        />
+        <NextflowLogModal
+            data={nextflowModalData}
+            showHandler={setNextflowModalData}
         />
         </Container>
     )    
