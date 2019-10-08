@@ -14,6 +14,8 @@ import { useFetch } from "../hooks.js";
 
 import {PrettyPrintJson, LabeledValue, LabeledValueList} from "./Widgets.js"
 
+import {GanttChart} from "./GanttChart.js"
+
 import TaskDetailModal from "./TaskDetailModal.js"
 import NextflowLogModal from "./NextflowLogModal.js"
 
@@ -180,7 +182,7 @@ function WorkflowDetailView({ runArn }) {
                     <TaskTable data={taskData} handleClick={setTaskModalData}/>
                   </Tab>
                   <Tab eventKey="gannt" title="Gannt View">
-                    <span>TODO: Gannt Chart</span>
+                    <GanttChart taskData={taskData} workflowStart={Date.parse(runData.metadataField.workflow.start)}/>
                   </Tab>
                   <Tab eventKey="raw" title="Raw">
                     <PrettyPrintJson data={taskData} />
