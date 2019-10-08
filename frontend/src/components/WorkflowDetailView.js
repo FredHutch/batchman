@@ -181,7 +181,7 @@ function WorkflowDetailView({ runArn }) {
                   <Tab eventKey="list" title="Task List">
                     <TaskTable data={taskData} handleClick={setTaskModalData}/>
                   </Tab>
-                  <Tab eventKey="gannt" title="Gannt View">
+                  <Tab eventKey="timeline" title="Timeline View">
                     <GanttChart taskData={taskData} workflowStart={Date.parse(runData.metadataField.workflow.start)}/>
                   </Tab>
                   <Tab eventKey="raw" title="Raw">
