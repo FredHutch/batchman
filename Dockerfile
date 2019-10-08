@@ -15,9 +15,9 @@ RUN apk add --no-cache bash postgresql-libs tzdata
 RUN mkdir /app && mkdir /install && mkdir /migrations
 WORKDIR /install
 
-# COPY ./frontend /install
-# RUN npm install --unsafe-perm
-# RUN npm run build && mv build/ /app
+COPY ./frontend /install
+RUN npm install --unsafe-perm
+RUN npm run build && mv build/ /app
 
 # Copy application files and assets
 COPY ./app /app
