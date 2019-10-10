@@ -73,7 +73,7 @@ class WorkflowList(MethodView):
             count(we.trace->>'status' = 'COMPLETED' OR NULL) completed_task_count
         from workflow_runner_execution as wre 
             right join weblog_event we on wre."taskArn" = we."workflowTaskArn"
-        group by wre."taskArn", wre."createdAt", we."runName", wre.info->>'lastStatus', we.trace->>'status';
+        group by wre."taskArn", wre."createdAt", we."runName", wre.info->>'lastStatus';
         """)
         res = [dict(row) for row in res]
         return jsonify(res)
