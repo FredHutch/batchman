@@ -24,7 +24,7 @@ class Config(object):
 
     # configure external api
     EXTERNAL_API_PREFIX = '/api/external'
-    API_KEY = get_api_key()
+    API_KEY = os.environ.get('API_KEY') or get_api_key()
     BATCHMAN_LOG_ENDPOINT = "https://batchman-api.labmed.uw.edu/api/external/weblog?key=%s" % API_KEY
 
     # ECS/Batch configuration

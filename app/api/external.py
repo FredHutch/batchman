@@ -1,3 +1,4 @@
+import pprint
 import sqlalchemy
 from flask.views import MethodView
 from flask_rest_api import Blueprint, abort
@@ -7,12 +8,14 @@ from app.models import WeblogEvent
 from app.common import require_apikey
 from app import db
 
-from app.models import WorkflowRunnerExecution
+from app.models import WorkflowExecution, TaskExecution, EcsEvent, WeblogEvent
 
 ExternalApi = Blueprint(
     'ExternalApi', __name__,
     description='Endpoints for nextflow weblogging, ecs logging and other externally facing endponts.'
 )
+
+pp = pprint.PrettyPrinter(indent=4)
 
 class NextflowWeblogSchema(Schema):
     class Meta:
@@ -39,10 +42,51 @@ class ReceiveWeblog(MethodView):
         Receives web log messages from nextflow.
         Requires key=API_KEY and taskArn=UUID (corresponding to 
         nextflow-runner taskArn) in query args."""
-        data["workflowTaskArn"] = query_args["taskArn"]
-        print(data, flush=True)
+        fargateTaskArn = query_args["taskArn"]
+        # First, save event in WeblogEvent table
+        data["fargateTaskArn"] = fargateTaskArn
         e = WeblogEvent(**data)
         db.session.add(e)
+
+        if data["event"] in ["started", "completed"]:
+            # update WorkflowExecution (this record will already have been created)
+            w = db.session.query(WorkflowExecution)\
+                .filter(WorkflowExecution.fargateTaskArn == fargateTaskArn)\
+                .one()
+
+            w.nextflowRunName = data["metadataField"]["workflow"]["runName"]
+            w.nextflowMetadata = data["metadataField"]
+            w.nextflowLastEvent = data["event"]
+            if data["event"] == "started":
+                w.nextflowWorkflowStartDateTime = data["utcTime"]
+            else:
+                w.nextflowWorkflowEndDateTime = data["utcTime"]
+            
+            w.nextflowExitStatus = data["metadataField"]["workflow"]["exitStatus"]
+            w.nextflowIsSuccess = data["metadataField"]["workflow"]["success"]
+            
+        elif data["event"] in ["process_submitted", "process_started", "process_completed"]:
+            # then create or update TaskExecution
+            taskArn = data["trace"]["native_id"]
+            try:
+                t = db.session.query(TaskExecution)\
+                    .filter(TaskExecution.fargateTaskArn == fargateTaskArn)\
+                    .filter(TaskExecution.taskArn == taskArn)\
+                    .one()
+            except sqlalchemy.orm.exc.NoResultFound: 
+                # create new record
+                t = TaskExecution(
+                    fargateTaskArn = fargateTaskArn,
+                    taskArn = taskArn,
+                    taskId = data["trace"]["task_id"],
+                    taskName = data["trace"]["name"]
+                )
+                db.session.add(t)
+
+            # update remaining fields
+            t.taskLastTrace = data["trace"]
+            t.taskLastEvent = data["event"]
+            
         db.session.commit()
         return None
 
@@ -59,6 +103,14 @@ class EcsLogSchema(Schema):
 
 @ExternalApi.route('/ecslog')
 class ReceiveWeblog(MethodView):
+    def parse_event_type(self, data):
+        if "detail" in data:
+            if data["detail"].get("jobQueue", "").startswith("arn:aws:batch"):
+                return "BATCH_JOB_EVENT"
+            elif data["detail"].get("launchType") == "FARGATE":
+                return "FARGATE_EVENT"
+        return None
+
     @ExternalApi.arguments(EcsLogSchema)
     @ExternalApi.arguments(ApiKeyArgs, location='query')
     @ExternalApi.response(code=201)
@@ -68,18 +120,61 @@ class ReceiveWeblog(MethodView):
         Receives web log messages from AWS Lambdas triggered by ECS events.
         Requires key=API_KEY in query args.
         """
+        event_type = self.parse_event_type(data)
+        print("### received %s ###" % event_type)
+        pp.pprint(data)
+        print("###########################")
 
-        if 'taskArn' in data['detail']:
-            taskArn = data['detail']['taskArn'].split(":task/")[1]
+        if event_type == "BATCH_JOB_EVENT":
+
+            # save event with taskArn
+            taskArn = data['detail']['jobId']
+            e = EcsEvent(
+                taskArn=taskArn,
+                data=data
+            )
+            db.session.add(e)
+            
+            # save task loggroup/stream names to TaskExecution record
+            # if not already recorded
             try:
-                db_res = db.session.query(WorkflowRunnerExecution)\
-                    .filter(WorkflowRunnerExecution.taskArn==taskArn).one()
+                t = db.session.query(TaskExecution)\
+                    .filter(TaskExecution.taskArn==taskArn).one()
             except sqlalchemy.orm.exc.NoResultFound:
                 abort(404)
+
+            logStreamName = data['detail']['container'].get("logStreamName")
+            if logStreamName and (t.taskLogGroupName is None):
+                t.taskLogGroupName = '/aws/batch/job'
+                t.taskLogStreamName = logStreamName
+                db.session.add(t)
+
+        elif event_type == 'FARGATE_EVENT':
+            fargateTaskArn = data['detail']['taskArn'].split(":task/")[1]
+            e = EcsEvent(
+                fargateTaskArn=fargateTaskArn,
+                data=data
+            )
+            db.session.add(e)
+
+            try:
+                w = db.session.query(WorkflowExecution)\
+                    .filter(WorkflowExecution.fargateTaskArn==fargateTaskArn).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                abort(404)
+            
+            # update fargate status field of WorkflowExecution
             if "lastStatus" in data['detail']:
-                db_res.info["lastStatus"] = data['detail']["lastStatus"]
-                db.session.add(db_res)
-                db.session.commit()
+                w.fargateLastStatus = data['detail']["lastStatus"]
+
+            # update metadata
+            w.fargateMetadata = data
+
+            # save to db
+            db.session.add(w)
+        else:
+            # other type of event
+            pass
         
-        return None
-        
+        # commit updates and event record
+        db.session.commit()

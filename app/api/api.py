@@ -6,7 +6,10 @@ from flask.views import MethodView
 from flask_rest_api import Blueprint, abort
 from marshmallow import Schema, INCLUDE, EXCLUDE, fields
 
-from app.models import WorkflowRunnerExecution
+from app.models import (
+    WorkflowExecution, WorkflowExecutionSchema,
+    TaskExecution, TaskExecutionSchema
+)
 from app import db
 
 ecs_client = boto3.client('ecs', region_name='us-west-2')
@@ -29,20 +32,6 @@ class CreateWorkflowArgs(Schema):
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
 
 
-class CreateWorkflowReturn(Schema):
-    class Meta:
-        unknown = EXCLUDE
-    taskArn = fields.String()
-    taskLastStatus = fields.String()
-    containerLastStatus = fields.String()
-
-
-class WorkflowRunnerExecutionSchema(Schema):
-    id = fields.Int()
-    taskArn = fields.String()
-    createdAt = fields.DateTime()
-    info = fields.Raw()
-
 WorkflowApi = Blueprint(
     'WorkflowApi', __name__,
     description='Create and monitor Nextflow workflows.'
@@ -60,26 +49,28 @@ class WorkflowList(MethodView):
             Key=s3_key
         )
 
-    @WorkflowApi.response(WorkflowRunnerExecutionSchema(many=True))
+    @WorkflowApi.response(WorkflowExecutionSchema(many=True))
     def get(self):
         """List all workflows"""
+
         res = db.session.execute("""
-        SELECT
-            wre."taskArn", wre."createdAt", 
-            we."runName", 
-            wre.info->>'lastStatus' as runnerTaskStatus, 
-            count(we.trace->>'status' = 'SUBMITTED' OR NULL) submitted_task_count,
-            count(we.trace->>'status' = 'RUNNING' OR NULL) running_task_count,  
-            count(we.trace->>'status' = 'COMPLETED' OR NULL) completed_task_count
-        from workflow_runner_execution as wre 
-            right join weblog_event we on wre."taskArn" = we."workflowTaskArn"
-        group by wre."taskArn", wre."createdAt", we."runName", wre.info->>'lastStatus';
+        SELECT 
+            w."fargateTaskArn", w."fargateCreatedAt", w."nextflowRunName",
+            w."fargateLastStatus" as runnerTaskStatus,
+            count(task."taskLastEvent" = 'process_submitted' OR NULL) submitted_task_count,
+            count(task."taskLastEvent" = 'process_started' OR NULL) running_task_count,  
+            count(task."taskLastEvent" = 'process_completed' OR NULL) completed_task_count
+        FROM workflow_execution as w 
+        LEFT JOIN task_execution as task
+            ON task."fargateTaskArn" = w."fargateTaskArn"
+        GROUP BY w."fargateTaskArn", w."fargateCreatedAt", w."nextflowRunName",
+            w."fargateLastStatus"
         """)
         res = [dict(row) for row in res]
         return jsonify(res)
 
     @WorkflowApi.arguments(CreateWorkflowArgs)
-    @WorkflowApi.response(code=201)
+    @WorkflowApi.response(WorkflowExecutionSchema, code=201)
     def post(self, args):
         """Submit new workflow for execution"""
         
@@ -130,51 +121,44 @@ class WorkflowList(MethodView):
         infoJson = res['tasks'][0].copy()
         infoJson['createdAt'] = str(infoJson['createdAt'])
 
-        e = WorkflowRunnerExecution(
-            taskArn=taskArn,
-            createdAt=res['tasks'][0]['createdAt'],
-            info=infoJson
+        e = WorkflowExecution(
+            fargateTaskArn=taskArn,
+            fargateCreatedAt=res['tasks'][0]['createdAt'],
+            fargateLastStatus=res['tasks'][0]['lastStatus'],
+            fargateMetadata=infoJson,
+            fargateLogGroupName='/ecs/nextflow-runner',
+            fargateLogStreamName='ecs/nextflow/%s' % taskArn,
         )
         db.session.add(e)
         db.session.commit()
-
-        return {
-            "taskArn": taskArn,
-            "taskLastStatus": res['tasks'][0]['lastStatus'],
-            "containerLastStatus": res['tasks'][0]['containers'][0]['lastStatus'],
-        }
+        
+        return e
 
 @WorkflowApi.route('/workflow/<string:id>')
 class Workflow(MethodView):
-    @WorkflowApi.response(WorkflowRunnerExecutionSchema)
+    @WorkflowApi.response(WorkflowExecutionSchema)
     def get(self, id ):
         """Get information on workflow by workflow id"""
-        # try:
-        #     db_res = db.session.query(WorkflowRunnerExecution)\
-        #         .filter(WorkflowRunnerExecution.taskArn==id).one()
-        # except sqlalchemy.orm.exc.NoResultFound:
-        #     abort(404)
-        
-        res = db.session.execute("""
-            SELECT DISTINCT ON (we."workflowTaskArn") 
-            wre.*, we."metadataField", we."runName", we."utcTime"
-            FROM workflow_runner_execution AS wre
-            JOIN weblog_event AS we ON wre."taskArn" = we."workflowTaskArn"
-            WHERE "taskArn" = :taskArn
-            AND we."metadataField" IS NOT NULL
-            ORDER BY we."workflowTaskArn", we.id DESC;
-            """, {'taskArn': id})
-        res = [dict(row) for row in res]
-        return jsonify(res[0])
+        try:
+            return db.session.query(WorkflowExecution)\
+                .filter(WorkflowExecution.fargateTaskArn==id).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            abort(404)
 
 
 @WorkflowApi.route('/workflow/<string:id>/logs')
 class WorkflowLogs(MethodView):
     def get(self, id ):
         """Get top level workflow logs"""
+        try:
+            db_res = db.session.query(WorkflowExecution)\
+                .filter(WorkflowExecution.fargateTaskArn==id).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            abort(404)
+
         res = logs_client.get_log_events(
-            logGroupName='/ecs/nextflow-runner',
-            logStreamName="ecs/nextflow/%s" % id,
+            logGroupName=db_res.fargateLogGroupName,
+            logStreamName=db_res.fargateLogStreamName,
             startFromHead=False
         )
         return res
@@ -183,77 +167,52 @@ class WorkflowLogs(MethodView):
 class WorkflowStatus(MethodView):
     def get(self, id):
         """Get latest workflow status"""
-        res = db.session.execute("""
-            SELECT distinct on (weblog_event."runId") * 
-            FROM weblog_event
-            WHERE
-                weblog_event."workflowTaskArn" = :runId
-                AND weblog_event."metadataField" is not null
-            ORDER BY weblog_event."runId", id desc;
-        """, {'runId': id})
-        res = [dict(row) for row in res]
-        return jsonify(res[0])
+        abort(500)
+        # res = db.session.execute("""
+        #     SELECT distinct on (weblog_event."runId") * 
+        #     FROM weblog_event
+        #     WHERE
+        #         weblog_event."workflowTaskArn" = :runId
+        #         AND weblog_event."metadataField" is not null
+        #     ORDER BY weblog_event."runId", id desc;
+        # """, {'runId': id})
+        # res = [dict(row) for row in res]
+        # return jsonify(res[0])
 
 
 @WorkflowApi.route('/workflow/<string:id>/tasks')
 class WorkflowTasks(MethodView):
+    @WorkflowApi.response(TaskExecutionSchema(many=True))
     def get(self, id):
         """Get tasks for workflow"""
-        res = db.session.execute("""
-            SELECT distinct on (task_id)
-            trace->>'task_id' as task_id,
-            *
-            FROM weblog_event
-            WHERE
-                weblog_event."workflowTaskArn" = :runId
-                AND weblog_event.trace is not null
-            ORDER BY task_id, id desc;
-        """, {'runId': id})
-        res = [dict(row) for row in res]
-        return jsonify(res)
+        return db.session.query(TaskExecution)\
+            .filter(TaskExecution.fargateTaskArn==id)\
+            .all()
 
 
 @WorkflowApi.route('/workflow/<string:run_id>/tasks/<string:task_id>')
 class WorkflowTaskStatus(MethodView):
+    @WorkflowApi.response(TaskExecutionSchema)
     def get(self, run_id, task_id):
         """Get all status updates for specific task of workflow"""
-        res = db.session.execute("""
-            SELECT
-            trace->>'task_id' as task_id,
-            *
-            FROM weblog_event
-            WHERE
-                weblog_event."workflowTaskArn" = :runId
-                AND
-                trace->>'task_id' = :taskId
-            ORDER BY id desc;
-        """, {'runId': run_id, 'taskId': task_id})
-        res = [dict(row) for row in res]
-        return jsonify(res)
+        return db.session.query(TaskExecution)\
+            .filter(TaskExecution.fargateTaskArn==run_id)\
+            .filter(TaskExecution.taskId==task_id)\
+            .one()
 
 
 @WorkflowApi.route('/workflow/<string:run_id>/tasks/<string:task_id>/logs')
 class WorkflowTaskLogs(MethodView):
     def get(self, run_id, task_id):
         """Get logs for specific task"""
-        res = db.session.execute("""
-            SELECT
-            trace->>'task_id' as task_id,
-            trace->>'native_id' as native_id
-            FROM weblog_event
-            WHERE
-                weblog_event."workflowTaskArn" = :runId
-                AND
-                trace->>'task_id' = :taskId
-            ORDER BY id desc;
-        """, {'runId': run_id, 'taskId': task_id})
-        res = [dict(row) for row in res]
-        native_id = res[0]["native_id"]
-        print(native_id)
-        log_stream_name = batch_client.describe_jobs(jobs=[native_id])['jobs'][0]['container']['logStreamName']
+        db_res = db.session.query(TaskExecution)\
+            .filter(TaskExecution.fargateTaskArn==run_id)\
+            .filter(TaskExecution.taskId==task_id)\
+            .one()
+
         res = logs_client.get_log_events(
-            logGroupName='/aws/batch/job',
-            logStreamName=log_stream_name,
+            logGroupName=db_res.taskLogGroupName,
+            logStreamName=db_res.taskLogStreamName,
             startFromHead=False
         )
         return res
