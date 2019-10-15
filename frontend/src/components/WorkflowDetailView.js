@@ -116,7 +116,10 @@ function WorkflowDetailView({ runArn }) {
             ? "RUNNING" // nextflow is running
             : runData.info.lastStatus // e.g., "PROVISIONING" from ECS
 
-    const runTime = timeConversion(new Date() - Date.parse(runData.nextflowMetadata.workflow.start))
+    const runTime = runData.nextflowWorkflowEndDateTime
+            ? timeConversion(Date.parse(runData.nextflowWorkflowEndDateTime) - Date.parse(runData.fargateCreatedAt))
+            : timeConversion(new Date() - Date.parse(runData.fargateCreatedAt))
+
     return (
         <Container fluid style={{minHeight:1800}}>
         <h2>Workflow Detail</h2>
@@ -135,7 +138,7 @@ function WorkflowDetailView({ runArn }) {
                     </Col>
                     <Col md="5" sm="12">
                         <LabeledValue label="Started at" value={runData.fargateCreatedAt} inline />
-                        {statusString == "COMPLETE" ? <LabeledValue label="Finished at" value="TODO" inline /> : null}
+                        {statusString == "COMPLETE" ? <LabeledValue label="Finished at" value={runData.nextflowWorkflowEndDateTime} inline /> : null}
                         <LabeledValue label="Runtime" value={runTime} inline />
                     </Col>
                     <Col md="3" sm="12" style={{textAlign: "right"}}>
