@@ -8,7 +8,6 @@ import Button from "react-bootstrap/Button";
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import BootstrapTable from "react-bootstrap-table-next";
-import { navigate } from "@reach/router"
 
 import { useFetch } from "../hooks.js";
 
@@ -144,7 +143,7 @@ function WorkflowDetailView({ runArn }) {
                     </Col>
                     <Col md="5" sm="12">
                         <LabeledValue label="Started at" value={runData.fargateCreatedAt} inline />
-                        {statusString == "COMPLETE" ? <LabeledValue label="Finished at" value={runData.nextflowWorkflowEndDateTime} inline /> : null}
+                        {statusString === "COMPLETE" ? <LabeledValue label="Finished at" value={runData.nextflowWorkflowEndDateTime} inline /> : null}
                         <LabeledValue label="Runtime" value={runTime} inline />
                     </Col>
                     <Col md="3" sm="12" style={{textAlign: "right"}}>

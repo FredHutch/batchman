@@ -1,22 +1,18 @@
-import React, { useState } from "react";
-
-import Button from "react-bootstrap/Button";
+import React from "react";
 import Modal from "react-bootstrap/Modal";
-import Card from "react-bootstrap/Card";
 
-
-import {PrettyPrintJson, LabeledValue, LabeledValueList} from "./Widgets.js"
+import { LabeledValue } from "./Widgets.js"
 import {LogViewer} from "./LogViewer.js"
 
 const TaskDetailModal = ({data, showHandler}) => {
 	console.log(data)
-	if (data == false) {
+	if (data === false) {
 		return null;
 	}
 	return (
 		<Modal
           dialogClassName="detail-modal"
-          show={data != false}
+          show={data !== false}
           onHide={() => showHandler(false)}
           aria-labelledby="detail-modal"
           animation={false}

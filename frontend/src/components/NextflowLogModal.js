@@ -1,20 +1,17 @@
-import React, { useState } from "react";
+import React from "react";
 
-import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
-import Card from "react-bootstrap/Card";
 
-import {PrettyPrintJson, LabeledValue, LabeledValueList} from "./Widgets.js"
 import {LogViewer} from "./LogViewer.js"
 
 const NextflowLogsModal = ({data, showHandler}) => {
-	if (data == false) {
+	if (data === false) {
 		return null;
 	}
 	return (
 		<Modal
           dialogClassName="detail-modal"
-          show={data != false}
+          show={data !== false}
           onHide={() => showHandler(false)}
           aria-labelledby="detail-modal"
           animation={false}

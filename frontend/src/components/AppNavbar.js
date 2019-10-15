@@ -1,12 +1,10 @@
 import React, { Component } from "react";
-import { Link, navigate } from "@reach/router"
+import { Link } from "@reach/router"
 
 import "bootstrap/dist/css/bootstrap.css";
 
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from "react-bootstrap/Nav";
-import Form from "react-bootstrap/Form";
-import Button from "react-bootstrap/Button";
 
 class AppNavbar extends Component {
   render() {

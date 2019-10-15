@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React from "react";
 import { Router } from "@reach/router"
 
 import AppNavbar from "./components/AppNavbar.js";

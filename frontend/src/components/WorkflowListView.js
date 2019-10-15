@@ -9,9 +9,6 @@ import { useFetch } from "../hooks.js";
 import "bootstrap/dist/css/bootstrap.css";
 import "react-bootstrap-table-next/dist/react-bootstrap-table2.min.css";
 
-const PrettyPrintJson = ({data}) => (<div><pre>{ 
-    JSON.stringify(data, null, 2) }</pre></div>);
-
 const taskCountDisplay = (cell, row) => (
     <span>{row.submitted_task_count} / {row.running_task_count} / {row.completed_task_count}</span>
 );

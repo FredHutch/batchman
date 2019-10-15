@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {Vega} from 'react-vega';
 
 var GanttSpec={
@@ -54,7 +54,7 @@ var GanttSpec={
 const msToMin = (ms) => (ms / 1000 / 60)
 
 export const GanttChart = ({taskData, workflowStart}) => {
-	if (taskData == undefined){
+	if (taskData === undefined){
 		return null;
 	}
     const data = taskData.map((t) => ({
