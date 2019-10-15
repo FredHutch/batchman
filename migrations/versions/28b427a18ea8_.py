@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: b50b9bc603ed
+Revision ID: 28b427a18ea8
 Revises: 
-Create Date: 2019-10-14 17:40:54.586844
+Create Date: 2019-10-15 16:00:04.102686
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b50b9bc603ed'
+revision = '28b427a18ea8'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -43,7 +43,7 @@ def upgrade():
     sa.Column('runName', sa.String(), nullable=True),
     sa.Column('runId', sa.String(), nullable=True),
     sa.Column('event', sa.String(), nullable=True),
-    sa.Column('utcTime', sa.DateTime(), nullable=True),
+    sa.Column('utcTime', sa.DateTime(timezone=True), nullable=True),
     sa.Column('metadataField', sa.JSON(), nullable=True),
     sa.Column('trace', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('id')
@@ -51,7 +51,7 @@ def upgrade():
     op.create_table('workflow_execution',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('fargateTaskArn', sa.String(), nullable=True),
-    sa.Column('fargateCreatedAt', sa.DateTime(), nullable=True),
+    sa.Column('fargateCreatedAt', sa.DateTime(timezone=True), nullable=True),
     sa.Column('fargateLastStatus', sa.String(), nullable=True),
     sa.Column('fargateMetadata', sa.JSON(), nullable=True),
     sa.Column('fargateLogGroupName', sa.String(), nullable=True),
@@ -59,8 +59,8 @@ def upgrade():
     sa.Column('nextflowRunName', sa.String(), nullable=True),
     sa.Column('nextflowMetadata', sa.JSON(), nullable=True),
     sa.Column('nextflowLastEvent', sa.String(), nullable=True),
-    sa.Column('nextflowWorkflowStartDateTime', sa.DateTime(), nullable=True),
-    sa.Column('nextflowWorkflowEndDateTime', sa.DateTime(), nullable=True),
+    sa.Column('nextflowWorkflowStartDateTime', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('nextflowWorkflowEndDateTime', sa.DateTime(timezone=True), nullable=True),
     sa.Column('nextflowExitStatus', sa.String(), nullable=True),
     sa.Column('nextflowIsSuccess', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('id')

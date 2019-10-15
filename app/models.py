@@ -8,7 +8,7 @@ class WorkflowExecution(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     # first set of fields are fargate-level metadata
     fargateTaskArn = db.Column(db.String()) # renamed from nextflowRunnerArn
-    fargateCreatedAt = db.Column(db.DateTime()) # added from AWS API call timestamp
+    fargateCreatedAt = db.Column(db.DateTime(timezone=True)) # added from AWS API call timestamp
     fargateLastStatus = db.Column(db.String()) # represents AWS Fargate status -- updated via ecs events
     fargateMetadata = db.Column(MutableDict.as_mutable(JSON)) # added from AWS API call
     fargateLogGroupName = db.Column(db.String()) # this contains the nextflow execution log
@@ -18,8 +18,8 @@ class WorkflowExecution(db.Model):
     #nextflowRunId = db.Column(db.String())
     nextflowMetadata = db.Column(MutableDict.as_mutable(JSON)) # added with workflow execution start
     nextflowLastEvent = db.Column(db.String())
-    nextflowWorkflowStartDateTime = db.Column(db.DateTime())
-    nextflowWorkflowEndDateTime = db.Column(db.DateTime())
+    nextflowWorkflowStartDateTime = db.Column(db.DateTime(timezone=True))
+    nextflowWorkflowEndDateTime = db.Column(db.DateTime(timezone=True))
     nextflowExitStatus = db.Column(db.String())    
     nextflowIsSuccess = db.Column(db.Boolean())
 
@@ -50,7 +50,7 @@ class WeblogEvent(db.Model):
     runName = db.Column(db.String())
     runId = db.Column(db.String())
     event = db.Column(db.String())
-    utcTime = db.Column(db.DateTime())
+    utcTime = db.Column(db.DateTime(timezone=True))
     metadataField = db.Column(db.JSON())
     trace = db.Column(db.JSON())
 
