@@ -51,7 +51,7 @@ class ReceiveWeblog(MethodView):
         pp.pprint(data)
         print("###########################")
 
-        if data["event"] in ["started", "completed", "error"]:
+        if data["event"] in ["started", "completed"]:
             # update WorkflowExecution (this record will already have been created)
             w = db.session.query(WorkflowExecution)\
                 .filter(WorkflowExecution.fargateTaskArn == fargateTaskArn)\
@@ -59,7 +59,13 @@ class ReceiveWeblog(MethodView):
 
             w.nextflowRunName = data["metadataField"]["workflow"]["runName"]
             w.nextflowMetadata = data["metadataField"]
-            w.nextflowLastEvent = data["event"]
+
+            if data["metadataField"]["workflow"]["errorMessage"] != None:
+                # override to "error", even though this isn't strictly the event name
+                w.nextflowLastEvent = "error"
+            else:
+                w.nextflowLastEvent = data["event"]
+
             if data["event"] == "started":
                 w.nextflowWorkflowStartDateTime = data["utcTime"]
             else:
@@ -89,6 +95,10 @@ class ReceiveWeblog(MethodView):
             # update remaining fields
             t.taskLastTrace = data["trace"]
             t.taskLastEvent = data["event"]
+        elif data["event"] == "error":
+            # do nothing with this event, as it will be followed by a "completed" event 
+            # with failure information. (this event is just a stub)
+            pass
 
         db.session.commit()
         return None
