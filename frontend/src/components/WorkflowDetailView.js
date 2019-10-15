@@ -109,6 +109,10 @@ function WorkflowDetailView({ runArn }) {
     if (runDataIsLoading || taskDataIsLoading) {
         return <div>Loading</div>
     }
+
+    if (runData.nextflowMetadata == null) {
+        runData.nextflowMetadata = {};
+    }
     // TODO FIX ME - cature error conditions
     const statusString = runData.nextflowMetadata.workflow.complete
         ? "COMPLETE" // nextflow finished
@@ -120,6 +124,8 @@ function WorkflowDetailView({ runArn }) {
             ? timeConversion(Date.parse(runData.nextflowWorkflowEndDateTime) - Date.parse(runData.fargateCreatedAt))
             : timeConversion(new Date() - Date.parse(runData.fargateCreatedAt))
 
+    const NA_STRING = "Not yet available";
+    
     return (
         <Container fluid style={{minHeight:1800}}>
         <h2>Workflow Detail</h2>
@@ -131,7 +137,7 @@ function WorkflowDetailView({ runArn }) {
                     <Col md="4" sm="12">
                         <LabeledValue label="Run Name" value={
                             <span>
-                                <b>{runData.nextflowMetadata.workflow.runName}</b><br/>
+                                <b>{runData.nextflowMetadata.workflow.runName || NA_STRING}</b><br/>
                                 <span style={{color: "#aaa", fontSize: "10pt"}}>ARN: {runData.fargateTaskArn}</span>
                             </span>
                         } />
@@ -147,17 +153,17 @@ function WorkflowDetailView({ runArn }) {
                 </Row>
                 <Row>
                     <Col>
-                        <LabeledValue label="Nextflow Command" value={<pre>{runData.nextflowMetadata.workflow.commandLine}</pre>} />
+                        <LabeledValue label="Nextflow Command" value={<pre>{runData.nextflowMetadata.workflow.commandLine || NA_STRING}</pre>} />
                     </Col>
                 </Row>
                 <Row>
                     <Col>
-                        <LabeledValue label="Work Directory" value={<pre>{runData.nextflowMetadata.workflow.workDir}</pre>} />
+                        <LabeledValue label="Work Directory" value={<pre>{runData.nextflowMetadata.workflow.workDir || NA_STRING}</pre>} />
                     </Col>
                 </Row>
                 <Row>
                     <Col>
-                        <LabeledValueList label="Workflow Parameters" values={runData.nextflowMetadata.parameters} />
+                        <LabeledValueList label="Workflow Parameters" values={runData.nextflowMetadata.parameters || NA_STRING} />
                     </Col>
                 </Row>
             </div>
@@ -181,7 +187,7 @@ function WorkflowDetailView({ runArn }) {
                     <TaskTable data={taskData} handleClick={setTaskModalData}/>
                   </Tab>
                   <Tab eventKey="timeline" title="Timeline View">
-                    <GanttChart taskData={taskData} workflowStart={Date.parse(runData.nextflowMetadata.workflow.start)}/>
+                    <GanttChart taskData={taskData} workflowStart={Date.parse(runData.nextflowMetadata.workflow.start || NA_STRING)}/>
                   </Tab>
                   <Tab eventKey="raw" title="Raw">
                     <PrettyPrintJson data={taskData} />
