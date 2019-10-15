@@ -110,7 +110,8 @@ function WorkflowDetailView({ runArn }) {
     }
 
     if (runData.nextflowMetadata == null) {
-        runData.nextflowMetadata = {};
+        runData.nextflowMetadata = {workflow: {}};
+        runData.info = {};
     }
     // TODO FIX ME - cature error conditions
     const statusString = runData.nextflowMetadata.workflow.complete
@@ -162,7 +163,10 @@ function WorkflowDetailView({ runArn }) {
                 </Row>
                 <Row>
                     <Col>
-                        <LabeledValueList label="Workflow Parameters" values={runData.nextflowMetadata.parameters || NA_STRING} />
+                    { runData.nextflowMetadata.parameters
+                        ? <LabeledValueList label="Workflow Parameters" values={ runData.nextflowMetadata.parameters } />
+                        : <LabeledValue label="Workflow Parameters" value={NA_STRING} />
+                    }
                     </Col>
                 </Row>
             </div>
