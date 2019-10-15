@@ -43,3 +43,4 @@ class DevelopmentConfig(Config):
     OPENAPI_URL_PREFIX = '/docs'
     OPENAPI_REDOC_PATH = '/redoc'
     OPENAPI_SWAGGER_UI_PATH = '/swagger'
+    OPENAPI_SWAGGER_UI_VERSION = "3.23.11"
