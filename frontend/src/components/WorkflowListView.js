@@ -23,7 +23,7 @@ const columns = [
             hidden: true
         },
         {
-            dataField: "runName",
+            dataField: "nextflowRunName",
             text: "Run Name",
             headerStyle: { width: "40%" }
         },
@@ -33,7 +33,7 @@ const columns = [
             headerStyle: { width: "20%" }
         },
         {
-            dataField: "createdAt",
+            dataField: "fargateCreatedAt",
             text: "Started at",
             headerStyle: { width: "20%" }
         },
@@ -69,7 +69,7 @@ function WorkflowListView(props) {
                 columns={columns}
                 rowStyle={{cursor: "pointer"}}
                 rowEvents={{
-                    onClick: (e, row, rowIndex) => navigate(`/workflows/${row.taskArn}`)
+                    onClick: (e, row, rowIndex) => navigate(`/workflows/${row.fargateTaskArn}`)
                 }}
                 bootstrap4={true}
                 bordered={false}

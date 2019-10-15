@@ -24,21 +24,21 @@ const TaskDetailModal = ({data, showHandler}) => {
           backdropClassName="modal-backdrop"
         >
           <Modal.Body>
-	          <h4>{data.trace.name} - Detail</h4>
+	          <h4>{data.taskLastTrace.name} - Detail</h4>
 	          <div className="workflow-detail-well" >
-	          	<LabeledValue label="Container" value={<pre>{data.trace.container}</pre>} />
-	          	<LabeledValue label="Work Directory" value={<pre>{data.trace.workdir}</pre>} />
-	          	<LabeledValue label="Env" value={<pre>{data.trace.env}</pre>} />
+	          	<LabeledValue label="Container" value={<pre>{data.taskLastTrace.container}</pre>} />
+	          	<LabeledValue label="Work Directory" value={<pre>{data.taskLastTrace.workdir}</pre>} />
+	          	<LabeledValue label="Env" value={<pre>{data.taskLastTrace.env}</pre>} />
 	          </div>
 	          
 	          <h4>Execution Commands</h4>
 	          <div className="workflow-detail-well" >
-	          	<pre>{data.trace.script.replace(/^\n/g, '')}</pre>
+	          	<pre>{data.taskLastTrace.script.replace(/^\n/g, '')}</pre>
 	          </div>
 
 	          <h4>Logs</h4>
 	          <div className="workflow-detail-well" >
-	          	<LogViewer url={`/api/v1/workflow/${data.workflowTaskArn}/tasks/${data.task_id}/logs`}/>
+	          	<LogViewer url={`/api/v1/workflow/${data.fargateTaskArn}/tasks/${data.taskId}/logs`}/>
 	          </div>
           </Modal.Body>
         </Modal>

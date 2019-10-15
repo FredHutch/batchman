@@ -58,11 +58,11 @@ export const GanttChart = ({taskData, workflowStart}) => {
 		return null;
 	}
     const data = taskData.map((t) => ({
-    	"task": t.trace.name,
-    	"process": t.trace.process,
-    	"submit": msToMin(t.trace.submit - workflowStart),
-    	"start": msToMin(t.trace.start - workflowStart),
-    	"complete": msToMin(t.trace.complete - workflowStart)
+    	"task": t.taskLastTrace.name,
+    	"process": t.taskLastTrace.process,
+    	"submit": msToMin(t.taskLastTrace.submit - workflowStart),
+    	"start": msToMin(t.taskLastTrace.start - workflowStart),
+    	"complete": msToMin(t.taskLastTrace.complete - workflowStart)
     }))
 	GanttSpec.data = {"values": data};
 	return <Vega spec={GanttSpec} />

@@ -40,9 +40,9 @@ const timeConversion = (millisec) => {
 }
 
 const runtimeDisplay = (cell, row) => {
-    return row.trace.realtime
-        ? timeConversion(row.trace.realtime)
-        : timeConversion(new Date() - row.trace.submit)
+    return row.taskLastTrace.realtime
+        ? timeConversion(row.taskLastTrace.realtime)
+        : timeConversion(new Date() - row.taskLastTrace.submit)
 }
 
 const TaskTable = ({ data, handleClick }) => {
@@ -53,27 +53,22 @@ const TaskTable = ({ data, handleClick }) => {
             hidden: true
         },
         {
-            dataField: "task_id",
+            dataField: "taskId",
             text: "Task ID",
             headerStyle: { width: "10%" }
         },
         {
-            dataField: "trace.hash",
-            text: "Nextflow hash",
-            headerStyle: { width: "10%" }
-        },
-        {
-            dataField: "trace.name",
+            dataField: "taskName",
             text: "Process",
             headerStyle: { width: "10%" }
         },
         {
-            dataField: "trace.container",
+            dataField: "taskLastTrace.container",
             text: "Container",
             headerStyle: { width: "20%" }
         },
         {
-            dataField: "trace.status",
+            dataField: "taskLastEvent",
             text: "Status",
             headerStyle: { width: "20%" }
         },
@@ -83,7 +78,7 @@ const TaskTable = ({ data, handleClick }) => {
             formatter: runtimeDisplay
         },
         {
-            dataField: "trace.attempt",
+            dataField: "taskLastTrace.attempt",
             text: "Attempt",
             headerStyle: { width: "20%" }
         }
@@ -114,13 +109,14 @@ function WorkflowDetailView({ runArn }) {
     if (runDataIsLoading || taskDataIsLoading) {
         return <div>Loading</div>
     }
-    const statusString = runData.metadataField.workflow.complete
+    // TODO FIX ME - cature error conditions
+    const statusString = runData.nextflowMetadata.workflow.complete
         ? "COMPLETE" // nextflow finished
-        : runData.metadataField.workflow.start
+        : runData.nextflowMetadata.workflow.start
             ? "RUNNING" // nextflow is running
             : runData.info.lastStatus // e.g., "PROVISIONING" from ECS
 
-    const runTime = timeConversion(new Date() - Date.parse(runData.metadataField.workflow.start))
+    const runTime = timeConversion(new Date() - Date.parse(runData.nextflowMetadata.workflow.start))
     return (
         <Container fluid style={{minHeight:1800}}>
         <h2>Workflow Detail</h2>
@@ -132,13 +128,13 @@ function WorkflowDetailView({ runArn }) {
                     <Col md="4" sm="12">
                         <LabeledValue label="Run Name" value={
                             <span>
-                                <b>{runData.metadataField.workflow.runName}</b><br/>
-                                <span style={{color: "#aaa", fontSize: "10pt"}}>ARN: {runData.taskArn}</span>
+                                <b>{runData.nextflowMetadata.workflow.runName}</b><br/>
+                                <span style={{color: "#aaa", fontSize: "10pt"}}>ARN: {runData.fargateTaskArn}</span>
                             </span>
                         } />
                     </Col>
                     <Col md="5" sm="12">
-                        <LabeledValue label="Started at" value={runData.createdAt} inline />
+                        <LabeledValue label="Started at" value={runData.fargateCreatedAt} inline />
                         {statusString == "COMPLETE" ? <LabeledValue label="Finished at" value="TODO" inline /> : null}
                         <LabeledValue label="Runtime" value={runTime} inline />
                     </Col>
@@ -148,23 +144,23 @@ function WorkflowDetailView({ runArn }) {
                 </Row>
                 <Row>
                     <Col>
-                        <LabeledValue label="Nextflow Command" value={<pre>{runData.metadataField.workflow.commandLine}</pre>} />
+                        <LabeledValue label="Nextflow Command" value={<pre>{runData.nextflowMetadata.workflow.commandLine}</pre>} />
                     </Col>
                 </Row>
                 <Row>
                     <Col>
-                        <LabeledValue label="Work Directory" value={<pre>{runData.metadataField.workflow.workDir}</pre>} />
+                        <LabeledValue label="Work Directory" value={<pre>{runData.nextflowMetadata.workflow.workDir}</pre>} />
                     </Col>
                 </Row>
                 <Row>
                     <Col>
-                        <LabeledValueList label="Workflow Parameters" values={runData.metadataField.parameters} />
+                        <LabeledValueList label="Workflow Parameters" values={runData.nextflowMetadata.parameters} />
                     </Col>
                 </Row>
             </div>
         </Col>
         <Col md="2">
-            <Button variant="outline-primary" style={{width: "100%"}} onClick={() => setNextflowModalData({workflowTaskArn: runData.taskArn})} >
+            <Button variant="outline-primary" style={{width: "100%"}} onClick={() => setNextflowModalData({workflowTaskArn: runData.fargateTaskArn})} >
                 View Nextflow Logs
             </Button>
             <Button variant="outline-primary mt-3" style={{width: "100%"}} disabled>
@@ -182,7 +178,7 @@ function WorkflowDetailView({ runArn }) {
                     <TaskTable data={taskData} handleClick={setTaskModalData}/>
                   </Tab>
                   <Tab eventKey="timeline" title="Timeline View">
-                    <GanttChart taskData={taskData} workflowStart={Date.parse(runData.metadataField.workflow.start)}/>
+                    <GanttChart taskData={taskData} workflowStart={Date.parse(runData.nextflowMetadata.workflow.start)}/>
                   </Tab>
                   <Tab eventKey="raw" title="Raw">
                     <PrettyPrintJson data={taskData} />

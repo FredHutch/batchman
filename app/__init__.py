@@ -4,12 +4,14 @@ import flask_rest_api
 import flask_sqlalchemy
 import flask_migrate
 
-from flask import Flask, make_response, redirect, send_from_directory, jsonify, request, current_app, render_template
+from flask import Flask, make_response, redirect, send_from_directory, jsonify, request, current_app, render_template, json
 
 
 ## Initialize these objects here
 # so they are accessible by `from app import db`
-db = flask_sqlalchemy.SQLAlchemy()
+db = flask_sqlalchemy.SQLAlchemy(
+    engine_options={"json_serializer": json.dumps} # use flask json to help serialize
+)
 migrate = flask_migrate.Migrate()
 
 ## Init and Config
@@ -26,7 +28,7 @@ def create_app():
     migrate.init_app(app, db)
     
     ## Import models so flask-migrate can see
-    from app.models import WeblogEvent, WorkflowRunnerExecution
+    from app.models import WorkflowExecution, TaskExecution, WeblogEvent, EcsEvent
 
     @app.route("/api/submit")
     def home():
