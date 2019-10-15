@@ -4,6 +4,7 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
+import Alert from "react-bootstrap/Alert";
 
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
@@ -44,7 +45,14 @@ const runtimeDisplay = (cell, row) => {
         : timeConversion(new Date() - row.taskLastTrace.submit)
 }
 
+
 const TaskTable = ({ data, handleClick }) => {
+    const statusClasses = {
+        "COMPLETED": "text-success",
+        "RUNNING": "text-info",
+        "FAILED": "text-danger"
+    }
+
     const columns = [
         {
             dataField: "id", // primary key
@@ -67,9 +75,10 @@ const TaskTable = ({ data, handleClick }) => {
             headerStyle: { width: "20%" }
         },
         {
-            dataField: "taskLastEvent",
-            text: "Status",
-            headerStyle: { width: "20%" }
+            dataField: "taskLastTrace.status",
+            text: "Last Status",
+            headerStyle: { width: "20%" },
+            formatter: (cell) => (<span className={statusClasses[cell]}>{cell}</span>)
         },
         {
             text: "Run Time",
@@ -177,6 +186,14 @@ function WorkflowDetailView({ runArn }) {
             </Button>
         </Col>
         </Row>
+        { runData.nextflowMetadata.workflow.errorReport
+            ? (
+                <Row><Col md='7' sm="12"><Alert variant="danger">
+                    <LabeledValue label="Exit Code" value={<pre>{runData.nextflowMetadata.workflow.exitStatus}</pre>} />
+                    <LabeledValue label="Error" value={<pre>{runData.nextflowMetadata.workflow.errorReport}</pre>} />
+                </Alert></Col></Row>
+            ) : null
+        }
         <Row>
             <Col md="9">
                 <Tabs defaultActiveKey="list" id="tasks-detail-tabs" transition={false} >
