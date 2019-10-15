@@ -11,7 +11,7 @@ import BootstrapTable from "react-bootstrap-table-next";
 
 import { useFetch } from "../hooks.js";
 
-import {PrettyPrintJson, LabeledValue, LabeledValueList} from "./Widgets.js"
+import {PrettyPrintJson, LabeledValue, LabeledValueList, StatusDisplayBadge} from "./Widgets.js"
 
 import {GanttChart} from "./GanttChart.js"
 
@@ -113,13 +113,7 @@ function WorkflowDetailView({ runArn }) {
         runData.nextflowMetadata = {workflow: {}};
         runData.info = {};
     }
-    // TODO FIX ME - cature error conditions
-    const statusString = runData.nextflowMetadata.workflow.complete
-        ? "COMPLETE" // nextflow finished
-        : runData.nextflowMetadata.workflow.start
-            ? "RUNNING" // nextflow is running
-            : runData.info.lastStatus // e.g., "PROVISIONING" from ECS
-
+    
     const runTime = runData.nextflowWorkflowEndDateTime
             ? timeConversion(Date.parse(runData.nextflowWorkflowEndDateTime) - Date.parse(runData.fargateCreatedAt))
             : timeConversion(new Date() - Date.parse(runData.fargateCreatedAt))
@@ -144,11 +138,11 @@ function WorkflowDetailView({ runArn }) {
                     </Col>
                     <Col md="5" sm="12">
                         <LabeledValue label="Started at" value={runData.fargateCreatedAt} inline />
-                        {statusString === "COMPLETE" ? <LabeledValue label="Finished at" value={runData.nextflowWorkflowEndDateTime} inline /> : null}
+                        {runData.nextflowWorkflowEndDateTime ? <LabeledValue label="Finished at" value={runData.nextflowWorkflowEndDateTime} inline /> : null}
                         <LabeledValue label="Runtime" value={runTime} inline />
                     </Col>
                     <Col md="3" sm="12" style={{textAlign: "right"}}>
-                        <h3 style={{marginTop: 4, marginRight: 10}}>{statusString}</h3>
+                        <h3 style={{marginTop: 4, marginRight: 10}}><StatusDisplayBadge aws_status={runData.fargateLastStatus} nf_status={runData.nextflowLastEvent} /></h3>
                     </Col>
                 </Row>
                 <Row>

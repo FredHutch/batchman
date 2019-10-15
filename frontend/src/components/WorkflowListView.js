@@ -9,9 +9,12 @@ import { useFetch } from "../hooks.js";
 import "bootstrap/dist/css/bootstrap.css";
 import "react-bootstrap-table-next/dist/react-bootstrap-table2.min.css";
 
+import { StatusDisplayBadge } from "./Widgets.js"
+
 const taskCountDisplay = (cell, row) => (
     <span>{row.submitted_task_count} / {row.running_task_count} / {row.completed_task_count}</span>
 );
+
 
 const columns = [
         {
@@ -25,8 +28,8 @@ const columns = [
             headerStyle: { width: "40%" }
         },
         {
-            dataField: "runnertaskstatus",
             text: "Status",
+            formatter: (cell, row) => (<StatusDisplayBadge aws_status={row.runnertaskstatus} nf_status={row.nextflowlastevent} />),
             headerStyle: { width: "20%" }
         },
         {

@@ -1,4 +1,5 @@
 import React from "react";
+import Badge from 'react-bootstrap/Badge'
 
 export const PrettyPrintJson = ({data}) => (
     <div><pre>
@@ -23,3 +24,29 @@ export const LabeledValueList = ({label, values}) => (
         </table>
     </div>
 )
+
+
+export const StatusDisplayBadge = ({aws_status, nf_status}) => {
+    if (aws_status == "PROVISIONING"){
+        return (<Badge variant="secondary">PROVISIONING</Badge>)
+    } else if (aws_status == "PENDING") {
+        return (<Badge variant="secondary">PENDING</Badge>)
+    } else if (aws_status == "RUNNING") {
+        if (nf_status == "started") {
+            return (<Badge variant="info">RUNNING</Badge>)
+        } else if (nf_status == "completed") {
+            return (<Badge variant="success">COMPLETE</Badge>)
+        } else if (nf_status == "error") {
+            return (<Badge variant="danger">ERROR</Badge>)
+        } else {
+            return (<Badge variant="secondary">STARTING</Badge>)
+        }
+    } else if (aws_status == "STOPPED") {
+        if (nf_status == "completed") {
+            return (<Badge variant="success">COMPLETE</Badge>)
+        } else if (nf_status == "error") {
+            return (<Badge variant="danger">ERROR</Badge>)
+        }
+    }
+    return (<Badge variant="dark">UNKNOWN ({aws_status} | {nf_status})</Badge>)
+};

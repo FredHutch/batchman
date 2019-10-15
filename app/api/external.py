@@ -48,7 +48,7 @@ class ReceiveWeblog(MethodView):
         e = WeblogEvent(**data)
         db.session.add(e)
 
-        if data["event"] in ["started", "completed"]:
+        if data["event"] in ["started", "completed", "error"]:
             # update WorkflowExecution (this record will already have been created)
             w = db.session.query(WorkflowExecution)\
                 .filter(WorkflowExecution.fargateTaskArn == fargateTaskArn)\

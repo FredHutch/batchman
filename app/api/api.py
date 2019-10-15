@@ -57,6 +57,7 @@ class WorkflowList(MethodView):
         SELECT 
             w."fargateTaskArn", w."fargateCreatedAt", w."nextflowRunName",
             w."fargateLastStatus" as runnerTaskStatus,
+            w."nextflowLastEvent" as nextflowLastEvent,
             count(task."taskLastEvent" = 'process_submitted' OR NULL) submitted_task_count,
             count(task."taskLastEvent" = 'process_started' OR NULL) running_task_count,  
             count(task."taskLastEvent" = 'process_completed' OR NULL) completed_task_count
@@ -64,7 +65,7 @@ class WorkflowList(MethodView):
         LEFT JOIN task_execution as task
             ON task."fargateTaskArn" = w."fargateTaskArn"
         GROUP BY w."fargateTaskArn", w."fargateCreatedAt", w."nextflowRunName",
-            w."fargateLastStatus"
+            w."fargateLastStatus", w."nextflowLastEvent"
         """)
         res = [dict(row) for row in res]
         return jsonify(res)
