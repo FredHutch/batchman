@@ -11,6 +11,7 @@
     "react-bootstrap": "^1.0.0-beta.14",
     "react-bootstrap-table-next": "^3.2.1",
     "react-dom": "^16.10.2",
+    "react-icons": "^3.7.0",
     "react-scripts": "3.2.0",
     "react-vega": "^7.0.1",
     "vega": "^5.7.1",

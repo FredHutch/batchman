@@ -58,14 +58,20 @@ class WorkflowList(MethodView):
             w."fargateTaskArn", w."fargateCreatedAt", w."nextflowRunName",
             w."fargateLastStatus" as runnerTaskStatus,
             w."nextflowLastEvent" as nextflowLastEvent,
-            count(task."taskLastEvent" = 'process_submitted' OR NULL) submitted_task_count,
-            count(task."taskLastEvent" = 'process_started' OR NULL) running_task_count,  
-            count(task."taskLastEvent" = 'process_completed' OR NULL) completed_task_count
+            w."nextflowMetadata"->'workflow'->'manifest' as manifest,
+            task_counts.*
         FROM workflow_execution as w 
-        LEFT JOIN task_execution as task
-            ON task."fargateTaskArn" = w."fargateTaskArn"
-        GROUP BY w."fargateTaskArn", w."fargateCreatedAt", w."nextflowRunName",
-            w."fargateLastStatus", w."nextflowLastEvent"
+        LEFT JOIN (
+            SELECT
+                t."fargateTaskArn",
+                count(t."taskLastEvent" = 'process_submitted' OR NULL) submitted_task_count,
+                count(t."taskLastEvent" = 'process_started' OR NULL) running_task_count,  
+                count(t."taskLastEvent" = 'process_completed' OR NULL) completed_task_count
+            FROM task_execution as t
+            GROUP BY t."fargateTaskArn"
+        ) as task_counts
+            ON task_counts."fargateTaskArn" = w."fargateTaskArn"
+        ORDER BY w."fargateCreatedAt" DESC;
         """)
         res = [dict(row) for row in res]
         return jsonify(res)

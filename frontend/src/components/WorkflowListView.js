@@ -2,6 +2,8 @@ import React from "react";
 
 import { format, formatRelative } from 'date-fns/fp'
 
+import { GoTag as TagIcon } from 'react-icons/go';
+
 import Container from "react-bootstrap/Container";
 import BootstrapTable from "react-bootstrap-table-next";
 import { navigate } from "@reach/router"
@@ -26,9 +28,14 @@ const columns = [
             hidden: true
         },
         {
+            text: "Workflow Name",
+            headerStyle: { width: "30%" },
+            formatter: (cell, {manifest}) => (<span>{manifest.name} <span className='text-muted'><TagIcon /> {manifest.version ? manifest.version : null}</span></span>)
+        },
+        {
             dataField: "nextflowRunName",
             text: "Run Name",
-            headerStyle: { width: "40%" }
+            headerStyle: { width: "30%" }
         },
         {
             text: "Status",
