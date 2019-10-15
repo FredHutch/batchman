@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+import { format, formatRelative } from 'date-fns/fp'
+
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -128,7 +130,7 @@ function WorkflowDetailView({ runArn }) {
             : timeConversion(new Date() - Date.parse(runData.fargateCreatedAt))
 
     const NA_STRING = "Not yet available";
-    
+    const now = new Date();
     return (
         <Container fluid style={{minHeight:1800}}>
         <h2>Workflow Detail</h2>
@@ -146,8 +148,8 @@ function WorkflowDetailView({ runArn }) {
                         } />
                     </Col>
                     <Col md="5" sm="12">
-                        <LabeledValue label="Started at" value={runData.fargateCreatedAt} inline />
-                        {runData.nextflowWorkflowEndDateTime ? <LabeledValue label="Finished at" value={runData.nextflowWorkflowEndDateTime} inline /> : null}
+                        <LabeledValue label="Started at" value={formatRelative(now, new Date(runData.fargateCreatedAt)).capFirstLetter()} inline />
+                        {runData.nextflowWorkflowEndDateTime ? <LabeledValue label="Finished at" value={formatRelative(now, new Date(runData.nextflowWorkflowEndDateTime)).capFirstLetter()} inline /> : null}
                         <LabeledValue label="Runtime" value={runTime} inline />
                     </Col>
                     <Col md="3" sm="12" style={{textAlign: "right"}}>

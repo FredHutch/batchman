@@ -1,5 +1,7 @@
 import React from "react";
 
+import { format, formatRelative } from 'date-fns/fp'
+
 import Container from "react-bootstrap/Container";
 import BootstrapTable from "react-bootstrap-table-next";
 import { navigate } from "@reach/router"
@@ -15,6 +17,7 @@ const taskCountDisplay = (cell, row) => (
     <span>{row.submitted_task_count} / {row.running_task_count} / {row.completed_task_count}</span>
 );
 
+const now = new Date();
 
 const columns = [
         {
@@ -35,7 +38,8 @@ const columns = [
         {
             dataField: "fargateCreatedAt",
             text: "Started at",
-            headerStyle: { width: "20%" }
+            headerStyle: { width: "20%" },
+            formatter: (cell) => formatRelative(now, new Date(cell)).capFirstLetter()
         },
         {
             dataField: "taskCounts",

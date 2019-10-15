@@ -50,3 +50,9 @@ export const StatusDisplayBadge = ({aws_status, nf_status}) => {
     }
     return (<Badge variant="dark">UNKNOWN ({aws_status} | {nf_status})</Badge>)
 };
+
+
+String.prototype.capFirstLetter = function () {
+    return /[a-z]/.test(this.trim()[0]) ? this.trim()[0]
+        .toUpperCase() + this.slice(1) : this;
+}
