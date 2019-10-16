@@ -59,7 +59,9 @@ class WorkflowList(MethodView):
             w."fargateLastStatus" as runnerTaskStatus,
             w."nextflowLastEvent" as nextflowLastEvent,
             w."nextflowMetadata"->'workflow'->'manifest' as manifest,
-            task_counts.*
+            task_counts."submitted_task_count",
+            task_counts."running_task_count",
+            task_counts."completed_task_count"
         FROM workflow_execution as w 
         LEFT JOIN (
             SELECT
