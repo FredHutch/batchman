@@ -67,7 +67,7 @@ const TaskTable = ({ data, handleClick }) => {
         {
             dataField: "taskId",
             text: "Task ID",
-            headerStyle: { width: "10%" }
+            headerStyle: { width: "5%" }
         },
         {
             dataField: "taskName",
@@ -77,23 +77,23 @@ const TaskTable = ({ data, handleClick }) => {
         {
             dataField: "taskLastTrace.container",
             text: "Container",
-            headerStyle: { width: "20%" }
+            headerStyle: { width: "25%" }
         },
         {
             dataField: "taskLastTrace.status",
             text: "Last Status",
-            headerStyle: { width: "20%" },
+            headerStyle: { width: "10%" },
             formatter: (cell) => (<span className={statusClasses[cell]}>{cell}</span>)
         },
         {
             text: "Run Time",
-            headerStyle: { width: "20%" },
+            headerStyle: { width: "5%" },
             formatter: runtimeDisplay
         },
         {
             dataField: "taskLastTrace.attempt",
             text: "Attempt",
-            headerStyle: { width: "20%" }
+            headerStyle: { width: "5%" }
         }
     ];
     return <BootstrapTable
