@@ -30,7 +30,11 @@ const columns = [
         {
             text: "Workflow Name",
             headerStyle: { width: "30%" },
-            formatter: (cell, {manifest}) => (<span>{manifest.name} <span className='text-muted'><TagIcon /> {manifest.version ? manifest.version : null}</span></span>)
+            formatter: (cell, {manifest}) => {
+                return manifest
+                    ? <span>{manifest.name} <span className='text-muted'><TagIcon /> {manifest.version ? manifest.version : null}</span></span>
+                    : <span className='text-muted'>None</span>;
+            }
         },
         {
             dataField: "nextflowRunName",
