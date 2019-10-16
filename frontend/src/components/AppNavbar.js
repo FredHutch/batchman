@@ -15,8 +15,8 @@ class AppNavbar extends Component {
 		  <Navbar.Collapse id="basic-navbar-nav" className="d-flex justify-content-sm-between">
 		    <div>
 		    	<Nav className="mr-auto">
-		      	{/*<Nav.Link href="#home">Home</Nav.Link>
-		      	<Nav.Link href="#link">Link</Nav.Link>*/}
+		      	<Nav.Link href="/workflow">Workflows</Nav.Link>
+		      	<Nav.Link href="/api/submit">Submit</Nav.Link>
 		    	</Nav>
 		    </div>
 			<div></div>
