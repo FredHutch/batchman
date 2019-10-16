@@ -12,6 +12,9 @@ import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import BootstrapTable from "react-bootstrap-table-next";
 
+import { GoTag as TagIcon } from 'react-icons/go';
+
+
 import { useFetch } from "../hooks.js";
 
 import {PrettyPrintJson, LabeledValue, LabeledValueList, StatusDisplayBadge} from "./Widgets.js"
@@ -121,7 +124,7 @@ function WorkflowDetailView({ runArn }) {
     }
 
     if (runData.nextflowMetadata == null) {
-        runData.nextflowMetadata = {workflow: {}};
+        runData.nextflowMetadata = {workflow: {}, manifest: {}};
         runData.info = {};
     }
     
@@ -131,9 +134,11 @@ function WorkflowDetailView({ runArn }) {
 
     const NA_STRING = "Not yet available";
     const now = new Date();
+    const manifest = runData.nextflowMetadata.workflow.manifest
     return (
         <Container fluid style={{minHeight:1800}}>
-        <h2>Workflow Detail</h2>
+        <h2>{manifest.name} <span style={{fontSize: 20, paddingLeft: 12}} className="text-muted"><TagIcon /> {manifest.version ? manifest.version : null}</span></h2>
+        
 
         <Row>
         <Col md='7' sm="12">
