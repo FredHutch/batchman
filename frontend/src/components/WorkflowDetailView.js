@@ -145,7 +145,7 @@ function WorkflowDetailView({ runArn }) {
     const manifest = runData.nextflowMetadata.workflow.manifest
     return (
         <Container fluid style={{minHeight:1800}}>
-        <h2>{manifest.name || "Workflow Detail"} <span style={{fontSize: 20, paddingLeft: 12}} className="text-muted">{manifest.version ? <span><TagIcon /> manifest.version</span> : null}</span></h2>
+        <h2>{manifest.name || "Workflow Detail"} <span style={{fontSize: 20, paddingLeft: 12}} className="text-muted">{manifest.version ? <span><TagIcon /> {manifest.version}</span> : null}</span></h2>
         
 
         <Row>
