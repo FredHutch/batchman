@@ -17,7 +17,7 @@ import { GoTag as TagIcon } from 'react-icons/go';
 
 import { useFetch } from "../hooks.js";
 
-import {PrettyPrintJson, LabeledValue, LabeledValueList, StatusDisplayBadge} from "./Widgets.js"
+import {PrettyPrintJson, LabeledValue, LabeledValueList, StatusDisplayBadge, S3Link} from "./Widgets.js"
 
 import {GanttChart} from "./GanttChart.js"
 
@@ -163,12 +163,12 @@ function WorkflowDetailView({ runArn }) {
                 </Row>
                 <Row>
                     <Col>
-                        <LabeledValue label="Nextflow Command" value={<pre>{runData.nextflowMetadata.workflow.commandLine || NA_STRING}</pre>} />
+                        <LabeledValue label="Nextflow Command" value={runData.nextflowMetadata.workflow.commandLine || NA_STRING} />
                     </Col>
                 </Row>
                 <Row>
                     <Col>
-                        <LabeledValue label="Work Directory" value={<pre>{runData.nextflowMetadata.workflow.workDir || NA_STRING}</pre>} />
+                        <LabeledValue label="Work Directory" value={runData.nextflowMetadata.workflow.workDir || NA_STRING} />
                     </Col>
                 </Row>
                 <Row>
@@ -184,9 +184,6 @@ function WorkflowDetailView({ runArn }) {
         <Col md="2">
             <Button variant="outline-primary" style={{width: "100%"}} onClick={() => setNextflowModalData({workflowTaskArn: runData.fargateTaskArn})} >
                 View Nextflow Logs
-            </Button>
-            <Button variant="outline-primary mt-3" style={{width: "100%"}} disabled>
-                Open Work Directory
             </Button>
             <Button variant="outline-primary mt-3" style={{width: "100%"}} disabled>
                 View Script and Config Files

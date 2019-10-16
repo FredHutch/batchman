@@ -1,7 +1,7 @@
 import React from "react";
 import Modal from "react-bootstrap/Modal";
 
-import { LabeledValue } from "./Widgets.js"
+import { LabeledValue, S3Link} from "./Widgets.js"
 import {LogViewer} from "./LogViewer.js"
 
 const TaskDetailModal = ({data, showHandler}) => {
@@ -22,9 +22,9 @@ const TaskDetailModal = ({data, showHandler}) => {
           <Modal.Body>
 	          <h4>{data.taskLastTrace.name} - Detail</h4>
 	          <div className="workflow-detail-well" >
-	          	<LabeledValue label="Container" value={<pre>{data.taskLastTrace.container}</pre>} />
-	          	<LabeledValue label="Work Directory" value={<pre>{data.taskLastTrace.workdir}</pre>} />
-	          	<LabeledValue label="Env" value={<pre>{data.taskLastTrace.env}</pre>} />
+	          	<LabeledValue label="Container" value={data.taskLastTrace.container} />
+	          	<LabeledValue label="Work Directory" value={data.taskLastTrace.workdir} />
+	          	<LabeledValue label="Env" value={data.taskLastTrace.env} />
 	          </div>
 	          
 	          <h4>Execution Commands</h4>

@@ -10,7 +10,7 @@ export const PrettyPrintJson = ({data}) => (
 export const LabeledValue = ({label, value, inline}) => (
     <div className='labeled-value' style={inline ? {display: "inline-block"} : {}}>
         <div className='label'>{label}</div>
-        <div className='value'>{value}</div>
+        <div className='value'><pre><S3Link url={value} /></pre></div>
     </div>
 )
 
@@ -19,7 +19,7 @@ export const LabeledValueList = ({label, values}) => (
         <div className='label'>{label}</div>
         <table className='label-list'>
             {Object.keys(values).map((key) => 
-                <tr><td className='label'>{key}</td><td className='value'>{values[key]}</td></tr>
+                <tr><td className='label'>{key}</td><td className='value'><S3Link url={values[key]} /></td></tr>
             )}
         </table>
     </div>
@@ -50,6 +50,20 @@ export const StatusDisplayBadge = ({aws_status, nf_status}) => {
     }
     return (<Badge variant="dark">UNKNOWN ({aws_status} | {nf_status})</Badge>)
 };
+
+
+export const S3Link = ({url}) => {
+    try {
+        if (url.startsWith('s3://')){
+            const target = `https://cloudfiles.labmed.uw.edu/browse/${url.slice(5)}`
+            return <a href={target} target="_blank">{url}</a>
+        } else {
+            return url
+        }
+    } catch(error) {
+        return url
+    }
+}
 
 
 String.prototype.capFirstLetter = function () {
