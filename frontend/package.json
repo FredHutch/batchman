@@ -13,6 +13,7 @@
     "react-dom": "^16.10.2",
     "react-icons": "^3.7.0",
     "react-scripts": "3.2.0",
+    "react-syntax-highlighter": "^11.0.2",
     "react-vega": "^7.0.1",
     "vega": "^5.7.1",
     "vega-lite": "^4.0.0-beta.9"

@@ -1,7 +1,8 @@
 import boto3
 import uuid
+import urllib
 import sqlalchemy
-from flask import current_app, jsonify
+from flask import current_app, jsonify, request
 from flask.views import MethodView
 from flask_rest_api import Blueprint, abort
 from marshmallow import Schema, INCLUDE, EXCLUDE, fields
@@ -197,6 +198,28 @@ class WorkflowTasks(MethodView):
         return db.session.query(TaskExecution)\
             .filter(TaskExecution.fargateTaskArn==id)\
             .all()
+
+
+@WorkflowApi.route('/workflow/<string:id>/script')
+@WorkflowApi.route('/workflow/<string:id>/config')
+class WorkflowScriptFile(MethodView):
+    def get(self, id):
+        """Get nextflow script for workflow"""
+        FILE = request.path.split("/")[-1]
+        try:
+            db_res = db.session.query(WorkflowExecution)\
+                .filter(WorkflowExecution.fargateTaskArn==id).one()
+            if FILE == "script":
+                s3_url = db_res.fargateMetadata["detail"]["overrides"]["containerOverrides"][0]["command"][1]
+            elif FILE == "config":
+                s3_url = db_res.fargateMetadata["detail"]["overrides"]["containerOverrides"][0]["command"][2]
+            else:
+                abort(500)
+        except sqlalchemy.orm.exc.NoResultFound:
+            abort(404)
+        p = urllib.parse.urlparse(s3_url)
+        res = s3_client.get_object(Bucket=p.netloc, Key=p.path[1:])
+        return jsonify({"contents": res['Body'].read().decode('utf-8')})
 
 
 @WorkflowApi.route('/workflow/<string:run_id>/tasks/<string:task_id>')

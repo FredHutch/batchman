@@ -23,6 +23,7 @@ import {GanttChart} from "./GanttChart.js"
 
 import TaskDetailModal from "./TaskDetailModal.js"
 import NextflowLogModal from "./NextflowLogModal.js"
+import NextflowScriptModal from "./NextflowScriptModal.js"
 
 import "bootstrap/dist/css/bootstrap.css";
 import "react-bootstrap-table-next/dist/react-bootstrap-table2.min.css";
@@ -124,6 +125,7 @@ function WorkflowDetailView({ runArn }) {
     const [taskData, taskDataIsLoading, taskDataisError] = useFetch(`/api/v1/workflow/${runArn}/tasks`);
     const [taskModalData, setTaskModalData] = useState(false);
     const [nextflowModalData, setNextflowModalData] = useState(false);
+    const [nextflowScriptData, setNextflowScriptModalData] = useState(false);
 
     if (runDataIsLoading || taskDataIsLoading) {
         return <div>Loading</div>
@@ -191,7 +193,7 @@ function WorkflowDetailView({ runArn }) {
             <Button variant="outline-primary" style={{width: "100%"}} onClick={() => setNextflowModalData({workflowTaskArn: runData.fargateTaskArn})} >
                 View Nextflow Logs
             </Button>
-            <Button variant="outline-primary mt-3" style={{width: "100%"}} disabled>
+            <Button variant="outline-primary mt-3" style={{width: "100%"}} onClick={() => setNextflowScriptModalData({workflowTaskArn: runData.fargateTaskArn})} >
                 View Script and Config Files
             </Button>
         </Col>
@@ -226,6 +228,10 @@ function WorkflowDetailView({ runArn }) {
         <NextflowLogModal
             data={nextflowModalData}
             showHandler={setNextflowModalData}
+        />
+        <NextflowScriptModal
+            data={nextflowScriptData}
+            showHandler={setNextflowScriptModalData}
         />
         </Container>
     )    
