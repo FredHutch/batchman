@@ -13,13 +13,14 @@ import { useFetch } from "../hooks.js";
 import "bootstrap/dist/css/bootstrap.css";
 import "react-bootstrap-table-next/dist/react-bootstrap-table2.min.css";
 
-import { StatusDisplayBadge } from "./Widgets.js"
+import { StatusDisplayBadge, sortSettings } from "./Widgets.js"
 
 const taskCountDisplay = (cell, row) => (
     <span>{row.submitted_task_count} / {row.running_task_count} / {row.completed_task_count}</span>
 );
 
 const now = new Date();
+
 
 const columns = [
         {
@@ -34,23 +35,29 @@ const columns = [
                 return manifest
                     ? <span>{manifest.name} <span className='text-muted'><TagIcon /> {manifest.version ? manifest.version : null}</span></span>
                     : <span className='text-muted'>None</span>;
-            }
+            },
+            sortValue: (cell, {manifest}) => manifest ? manifest.name : "",
+            ...sortSettings
         },
         {
             dataField: "nextflowRunName",
             text: "Run Name",
-            headerStyle: { width: "30%" }
+            headerStyle: { width: "30%" },
+            ...sortSettings
         },
         {
             text: "Status",
             formatter: (cell, row) => (<StatusDisplayBadge aws_status={row.runnertaskstatus} nf_status={row.nextflowlastevent} />),
-            headerStyle: { width: "20%" }
+            headerStyle: { width: "20%" },
+            sortValue: (cell, row) => (`${row.runnertaskstatus}-${row.nextflowlastevent}`),
+            ...sortSettings
         },
         {
             dataField: "fargateCreatedAt",
             text: "Started at",
             headerStyle: { width: "20%" },
-            formatter: (cell) => formatRelative(now, new Date(cell)).capFirstLetter()
+            formatter: (cell) => formatRelative(now, new Date(cell)).capFirstLetter(),
+            ...sortSettings
         },
         {
             dataField: "taskCounts",
@@ -82,6 +89,7 @@ function WorkflowListView(props) {
                 keyField="id"
                 data={data}
                 columns={columns}
+                defaultSorted={[{dataField: "fargateCreatedAt", order: "desc"}]}
                 rowStyle={{cursor: "pointer"}}
                 rowEvents={{
                     onClick: (e, row, rowIndex) => navigate(`/workflows/${row.fargateTaskArn}`)

@@ -1,5 +1,6 @@
 import React from "react";
 import Badge from 'react-bootstrap/Badge'
+import { GoDash, GoChevronUp, GoChevronDown } from 'react-icons/go';
 
 export const PrettyPrintJson = ({data}) => (
     <div><pre>
@@ -70,3 +71,14 @@ String.prototype.capFirstLetter = function () {
     return /[a-z]/.test(this.trim()[0]) ? this.trim()[0]
         .toUpperCase() + this.slice(1) : this;
 }
+
+
+export const sortSettings = {
+    sort: true,
+    sortCaret: (order) => (
+        order === undefined
+        ? <GoDash style={{color: "#999"}} />
+        : order === 'asc'
+            ? <GoChevronUp />
+            : <GoChevronDown />)
+};

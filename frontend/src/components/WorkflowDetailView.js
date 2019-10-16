@@ -14,10 +14,10 @@ import BootstrapTable from "react-bootstrap-table-next";
 
 import { GoTag as TagIcon } from 'react-icons/go';
 
-
 import { useFetch } from "../hooks.js";
 
-import {PrettyPrintJson, LabeledValue, LabeledValueList, StatusDisplayBadge, S3Link} from "./Widgets.js"
+import {PrettyPrintJson, LabeledValue, LabeledValueList, 
+    StatusDisplayBadge, S3Link, sortSettings} from "./Widgets.js"
 
 import {GanttChart} from "./GanttChart.js"
 
@@ -50,7 +50,6 @@ const runtimeDisplay = (cell, row) => {
         : timeConversion(new Date() - row.taskLastTrace.submit)
 }
 
-
 const TaskTable = ({ data, handleClick }) => {
     const statusClasses = {
         "COMPLETED": "text-success",
@@ -67,39 +66,46 @@ const TaskTable = ({ data, handleClick }) => {
         {
             dataField: "taskId",
             text: "Task ID",
-            headerStyle: { width: "5%" }
+            headerStyle: { width: "5%" },
+            ...sortSettings
         },
         {
             dataField: "taskName",
             text: "Process",
-            headerStyle: { width: "10%" }
+            headerStyle: { width: "10%" },
+            ...sortSettings
         },
         {
             dataField: "taskLastTrace.container",
             text: "Container",
-            headerStyle: { width: "25%" }
+            headerStyle: { width: "25%" },
+            ...sortSettings
         },
         {
             dataField: "taskLastTrace.status",
             text: "Last Status",
             headerStyle: { width: "10%" },
-            formatter: (cell) => (<span className={statusClasses[cell]}>{cell}</span>)
+            formatter: (cell) => (<span className={statusClasses[cell]}>{cell}</span>),
+            ...sortSettings
         },
         {
             text: "Run Time",
             headerStyle: { width: "5%" },
-            formatter: runtimeDisplay
+            formatter: runtimeDisplay,
+            ...sortSettings
         },
         {
             dataField: "taskLastTrace.attempt",
             text: "Attempt",
-            headerStyle: { width: "5%" }
+            headerStyle: { width: "5%" },
+            ...sortSettings
         }
     ];
     return <BootstrapTable
                 keyField="id"
                 data={data}
                 columns={columns}
+                defaultSorted={[{dataField: "taskId", order: "asc"}]}
                 rowEvents={{
                     onClick: (e, row, rowIndex) => handleClick(row)
                 }}
