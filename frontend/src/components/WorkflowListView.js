@@ -57,6 +57,7 @@ const columns = [
             text: "Started at",
             headerStyle: { width: "20%" },
             formatter: (cell) => formatRelative(now, new Date(cell)).capFirstLetter(),
+            sortValue: (cell, row) => new Date(cell),
             ...sortSettings
         },
         {
