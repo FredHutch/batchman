@@ -61,6 +61,7 @@ class WorkflowList(MethodView):
             w."fargateLastStatus" as runnerTaskStatus,
             w."nextflowLastEvent" as nextflowLastEvent,
             w."nextflowMetadata"->'workflow'->'manifest' as manifest,
+            w."cacheTaskArn",
             task_counts."submitted_task_count",
             task_counts."running_task_count",
             task_counts."completed_task_count"
@@ -110,7 +111,7 @@ class WorkflowList(MethodView):
         workflow_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], workflow_key)
         config_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], config_key)
         nf_session_loc = "s3://" + current_app.config["NEXTFLOW_S3_SESSION_CACHE"]
-        
+
         res = ecs_client.run_task(
             cluster=current_app.config["ECS_CLUSTER"],
             taskDefinition=current_app.config["NEXTFLOW_TASK_DEFINITION"],
@@ -161,6 +162,7 @@ class WorkflowList(MethodView):
             fargateMetadata=infoJson,
             fargateLogGroupName='/ecs/nextflow-runner',
             fargateLogStreamName='ecs/nextflow/%s' % taskArn,
+            cacheTaskArn=resume_fargate_task_arn
         )
         db.session.add(e)
         db.session.commit()
