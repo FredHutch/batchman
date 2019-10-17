@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from '@reach/router'
 
 import { format, formatRelative } from 'date-fns/fp'
 
@@ -15,7 +16,7 @@ import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import BootstrapTable from "react-bootstrap-table-next";
 
-import { GoTag as TagIcon } from 'react-icons/go';
+import { GoTag as TagIcon, GoSync } from 'react-icons/go';
 
 import { useFetch } from "../hooks.js";
 
@@ -198,6 +199,14 @@ function WorkflowDetailView({ runArn }) {
             : <PrettyPrintJson data={runData} />
             }
             </div>
+            { runData.cacheTaskArn && (
+                <Alert variant="warning">
+                    <LabeledValue style={{marginBottom: 0}}
+                        label={<span><GoSync style={{color: "blue"}}/> Resumed from</span>} 
+                        value={<Link to={`/workflows/${runData.cacheTaskArn}`}>{runData.cacheTaskArn}</Link> || NA_STRING} 
+                    />
+                </Alert>) 
+            }
         </Col>
         <Col md="2">
             <Button variant="outline-primary" style={{width: "100%"}} onClick={() => setNextflowModalData({workflowTaskArn: runData.fargateTaskArn})} >

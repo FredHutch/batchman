@@ -26,7 +26,8 @@
 
 .labeled-value > div.value > pre {
   white-space: pre-wrap;
-  word-break: keep-all
+  word-break: keep-all;
+  margin-bottom: 0px;
 }
 
 .labeled-value > table.label-list td.label {

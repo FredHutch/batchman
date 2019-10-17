@@ -8,15 +8,15 @@ export const PrettyPrintJson = ({data}) => (
     </pre></div>
 );
 
-export const LabeledValue = ({label, value, inline}) => (
-    <div className='labeled-value' style={inline ? {display: "inline-block"} : {}}>
+export const LabeledValue = ({label, value, inline, ...props}) => (
+    <div className='labeled-value' style={inline ? {display: "inline-block"} : {}} {...props}>
         <div className='label'>{label}</div>
         <div className='value'><pre><S3Link url={value} /></pre></div>
     </div>
 )
 
-export const LabeledValueList = ({label, values}) => (
-    <div className='labeled-value'>
+export const LabeledValueList = ({label, values, ...props}) => (
+    <div className='labeled-value' {...props}>
         <div className='label'>{label}</div>
         <table className='label-list'>
             {Object.keys(values).map((key) => 
