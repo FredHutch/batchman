@@ -107,10 +107,10 @@ class WorkflowList(MethodView):
             nextflow_options = ""
             resume_fargate_task_arn = ""
 
-        nf_session_cache_dir_out = "s3://%s" % current_app.config["NEXTFLOW_S3_TEMP"]
         workflow_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], workflow_key)
         config_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], config_key)
-
+        nf_session_loc = "s3://" + current_app.config["NEXTFLOW_S3_SESSION_CACHE"]
+        
         res = ecs_client.run_task(
             cluster=current_app.config["ECS_CLUSTER"],
             taskDefinition=current_app.config["NEXTFLOW_TASK_DEFINITION"],
@@ -129,8 +129,8 @@ class WorkflowList(MethodView):
                                 "value": nextflow_options
                             },
                             {
-                                "name": "NF_SESION_CACHE_DIR",
-                                "value": current_app.config["NEXTFLOW_S3_SESSION_CACHE"]
+                                "name": "NF_SESSION_CACHE_DIR",
+                                "value": nf_session_loc
                             },
                             {
                                 "name": "NF_SESSION_CACHE_ARN",
