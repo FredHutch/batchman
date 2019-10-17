@@ -33,7 +33,6 @@ def create_app():
     @app.route("/api/submit")
     def home():
         task_arns = db.session.query(WorkflowExecution.fargateTaskArn).all()
-        print(task_arns)
         options = ["<option value='%s'>%s</option>" % (i[0], i[0]) for i in task_arns]
         return """
             <h2>Batchman submit job</h2>
