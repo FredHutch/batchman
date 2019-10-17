@@ -31,8 +31,8 @@ const columns = [
             text: "Workflow Name",
             headerStyle: { width: "30%" },
             formatter: (cell, {manifest}) => {
-                return manifest
-                    ? <span>{manifest.name} <span className='text-muted'><TagIcon /> {manifest.version ? manifest.version : null}</span></span>
+                return manifest && manifest.name
+                    ? <span>{manifest.name} {manifest.version && <span className='text-muted'><TagIcon /> {manifest.version}</span>}</span>
                     : <span className='text-muted'>None</span>;
             },
             sortValue: (cell, {manifest}) => manifest ? manifest.name : "",
