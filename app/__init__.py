@@ -32,17 +32,21 @@ def create_app():
 
     @app.route("/api/submit")
     def home():
-        db_res = db.session.query(WorkflowExecution).all()
-        task_arns = [dict(row)["fargateTaskArn"] for row in res]
-        options = ["<option value='%s'>%s</option>" % (i, i) for i in task_arns]
+        task_arns = db.session.query(WorkflowExecution.fargateTaskArn).all()
+        print(task_arns)
+        options = ["<option value='%s'>%s</option>" % (i[0], i[0]) for i in task_arns]
         return """
             <h2>Batchman submit job</h2>
             <form action="/api/v1/workflow" method="post">
                 <textarea name="nextflow_workflow" rows=50 cols=100>Paste main.nf file here</textarea>
                 <textarea name="nextflow_config" rows=50 cols=100>Paste nextflow.config here</textarea>
+                <br/>
+                <h4>Resume options</h4>
                 <select name="resume_fargate_task_arn">
+                  <option value="">No resume</option>
                   %s
                 </select>
+                <br/><br/><br/>
                 <input type="submit" />
             </form>
         """ % ("\n".join(options))

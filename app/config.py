@@ -32,6 +32,7 @@ class Config(object):
     ECS_SUBNETS = ["subnet-0dd677ebd49d24d08"]
     NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:2'
     NEXTFLOW_S3_TEMP = 'uwlm-personal'
+    NEXTFLOW_S3_SESSION_CACHE = 'uwlm-personal/nf_session_data'
 
 
 class ProductionConfig(Config):
