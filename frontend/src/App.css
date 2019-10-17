@@ -26,7 +26,8 @@
 
 .labeled-value > div.value > pre {
   white-space: pre-wrap;
-  word-break: keep-all
+  word-break: keep-all;
+  margin-bottom: 0px;
 }
 
 .labeled-value > table.label-list td.label {
@@ -61,4 +62,16 @@
 
 div.vega-embed details {
   display: none;
+}
+
+div.toolbar .mini-button-group {
+    font-size: 12px;
+    height: 20px;
+    padding-top: 0px;
+    cursor: pointer;
+}
+
+div.toolbar .btn-outline-secondary:focus, .btn-outline-secondary.focus {
+    outline:none !important;
+    box-shadow:none !important;
 }

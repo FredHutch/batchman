@@ -1,8 +1,7 @@
 import React from "react";
 
 import { format, formatRelative } from 'date-fns/fp'
-
-import { GoTag as TagIcon } from 'react-icons/go';
+import { GoTag as TagIcon, GoSync } from 'react-icons/go';
 
 import Container from "react-bootstrap/Container";
 import BootstrapTable from "react-bootstrap-table-next";
@@ -43,6 +42,8 @@ const columns = [
             dataField: "nextflowRunName",
             text: "Run Name",
             headerStyle: { width: "30%" },
+            formatter: (cell, row) => (<span>{cell} {row.cacheTaskArn && <GoSync style={{color: "blue"}}/>}</span>),
+            sortValue: (cell) => cell,
             ...sortSettings
         },
         {
@@ -57,6 +58,7 @@ const columns = [
             text: "Started at",
             headerStyle: { width: "20%" },
             formatter: (cell) => formatRelative(now, new Date(cell)).capFirstLetter(),
+            sortValue: (cell, row) => new Date(cell),
             ...sortSettings
         },
         {

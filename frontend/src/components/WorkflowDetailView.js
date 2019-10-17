@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from '@reach/router'
 
 import { format, formatRelative } from 'date-fns/fp'
 
@@ -8,11 +9,14 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Alert from "react-bootstrap/Alert";
 
+import ToggleButtonGroup from 'react-bootstrap/ToggleButtonGroup'
+import ToggleButton from 'react-bootstrap/ToggleButton'
+
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import BootstrapTable from "react-bootstrap-table-next";
 
-import { GoTag as TagIcon } from 'react-icons/go';
+import { GoTag as TagIcon, GoSync } from 'react-icons/go';
 
 import { useFetch } from "../hooks.js";
 
@@ -126,7 +130,7 @@ function WorkflowDetailView({ runArn }) {
     const [taskModalData, setTaskModalData] = useState(false);
     const [nextflowModalData, setNextflowModalData] = useState(false);
     const [nextflowScriptData, setNextflowScriptModalData] = useState(false);
-
+    const [summaryViewSetting, setSummaryViewSetting] = useState("summary"); // "summary" | "json"
     if (runDataIsLoading || taskDataIsLoading) {
         return <div>Loading</div>
     }
@@ -145,13 +149,18 @@ function WorkflowDetailView({ runArn }) {
     const manifest = runData.nextflowMetadata.workflow.manifest
     return (
         <Container fluid style={{minHeight:1800}}>
-        <h2>{manifest.name || "Workflow Detail"} <span style={{fontSize: 20, paddingLeft: 12}} className="text-muted">{manifest.version ? <span><TagIcon /> {manifest.version}</span> : null}</span></h2>
-        
-
+            <h2 style={{display: "inline-block"}}>{manifest.name || "Workflow Detail"} <span style={{fontSize: 20, paddingLeft: 12}} className="text-muted">{manifest.version ? <span><TagIcon /> manifest.version</span> : null}</span></h2>
+            <div style={{display: "inline-block", marginLeft: 30}} className='toolbar'>
+                <ToggleButtonGroup type="radio" value={summaryViewSetting} onChange={setSummaryViewSetting} name="summaryViewSettingToggle">
+                  <ToggleButton className='mini-button-group' variant="outline-secondary" size="sm" value="summary">Summary</ToggleButton>
+                  <ToggleButton className='mini-button-group' variant="outline-secondary" size="sm" value="json">JSON</ToggleButton>
+                </ToggleButtonGroup>
+            </div>
         <Row>
         <Col md='7' sm="12">
             <div className="workflow-detail-well" >
-                <Row>
+            { summaryViewSetting === "summary"
+            ? (<div><Row>
                     <Col md="4" sm="12">
                         <LabeledValue label="Run Name" value={
                             <span>
@@ -186,8 +195,18 @@ function WorkflowDetailView({ runArn }) {
                         : <LabeledValue label="Workflow Parameters" value={NA_STRING} />
                     }
                     </Col>
-                </Row>
+                </Row></div>)
+            : <PrettyPrintJson data={runData} />
+            }
             </div>
+            { runData.cacheTaskArn && (
+                <Alert variant="warning">
+                    <LabeledValue style={{marginBottom: 0}}
+                        label={<span><GoSync style={{color: "blue"}}/> Resumed from</span>} 
+                        value={<Link to={`/workflows/${runData.cacheTaskArn}`}>{runData.cacheTaskArn}</Link> || NA_STRING} 
+                    />
+                </Alert>) 
+            }
         </Col>
         <Col md="2">
             <Button variant="outline-primary" style={{width: "100%"}} onClick={() => setNextflowModalData({workflowTaskArn: runData.fargateTaskArn})} >
@@ -207,15 +226,16 @@ function WorkflowDetailView({ runArn }) {
             ) : null
         }
         <Row>
+            <Col xs="12"><h4>Tasks</h4></Col>
             <Col md="9">
                 <Tabs defaultActiveKey="list" id="tasks-detail-tabs" transition={false} >
-                  <Tab eventKey="list" title="Task List">
-                    <TaskTable data={taskData} handleClick={setTaskModalData}/>
+                  <Tab eventKey="list" title="List">
+                    <TaskTable data={taskData} handleClick={setTaskModalData} />
                   </Tab>
                   <Tab eventKey="timeline" title="Timeline View">
                     <GanttChart taskData={taskData} workflowStart={Date.parse(runData.nextflowMetadata.workflow.start || NA_STRING)}/>
                   </Tab>
-                  <Tab eventKey="raw" title="Raw">
+                  <Tab eventKey="raw" title="JSON">
                     <PrettyPrintJson data={taskData} />
                   </Tab>
                 </Tabs>

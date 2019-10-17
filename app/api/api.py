@@ -24,11 +24,12 @@ class CreateWorkflowArgs(Schema):
     # be sent via the same POST.
     # Future versions of `flask_rest_api` may more natively support this.
     class Meta:
-        unknown = INCLUDE    
+        unknown = INCLUDE
     nextflow_version = fields.String(location="form")
     nextflow_arguments = fields.String(location="form")
     nextflow_workflow = fields.String(location="form")
     nextflow_config = fields.String(location="form")
+    resume_fargate_task_arn = fields.String(location="form", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
 
@@ -60,6 +61,7 @@ class WorkflowList(MethodView):
             w."fargateLastStatus" as runnerTaskStatus,
             w."nextflowLastEvent" as nextflowLastEvent,
             w."nextflowMetadata"->'workflow'->'manifest' as manifest,
+            w."cacheTaskArn",
             task_counts."submitted_task_count",
             task_counts."running_task_count",
             task_counts."completed_task_count"
@@ -83,7 +85,6 @@ class WorkflowList(MethodView):
     @WorkflowApi.response(WorkflowExecutionSchema, code=201)
     def post(self, args):
         """Submit new workflow for execution"""
-        
         # 1. If a workflow and config file was uploaded
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
             uuid_key = self._generate_key()
@@ -99,8 +100,17 @@ class WorkflowList(MethodView):
             print(args)
             return "Invalid nextflow commands", 500
         
+        if args.get("resume_fargate_task_arn", "") != "":
+            # resume from prior nextflow execution
+            resume_fargate_task_arn = args["resume_fargate_task_arn"]
+            nextflow_options = "-resume"
+        else:
+            nextflow_options = ""
+            resume_fargate_task_arn = ""
+
         workflow_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], workflow_key)
         config_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], config_key)
+        nf_session_loc = "s3://" + current_app.config["NEXTFLOW_S3_SESSION_CACHE"]
 
         res = ecs_client.run_task(
             cluster=current_app.config["ECS_CLUSTER"],
@@ -110,10 +120,24 @@ class WorkflowList(MethodView):
                     {
                         "name": "nextflow",
                         "command": ["runner.sh", workflow_s3_loc, config_s3_loc],
-                        "environment": [{
-                            "name": "BATCHMAN_LOG_ENDPOINT",
-                            "value": current_app.config["BATCHMAN_LOG_ENDPOINT"]
-                        }],
+                        "environment": [
+                            {
+                                "name": "BATCHMAN_LOG_ENDPOINT",
+                                "value": current_app.config["BATCHMAN_LOG_ENDPOINT"]
+                            },
+                            {
+                                "name": "NEXTFLOW_OPTIONS",
+                                "value": nextflow_options
+                            },
+                            {
+                                "name": "NF_SESSION_CACHE_DIR",
+                                "value": nf_session_loc
+                            },
+                            {
+                                "name": "NF_SESSION_CACHE_ARN",
+                                "value": resume_fargate_task_arn
+                            },
+                        ],
                     }
                 ]
             },
@@ -138,6 +162,7 @@ class WorkflowList(MethodView):
             fargateMetadata=infoJson,
             fargateLogGroupName='/ecs/nextflow-runner',
             fargateLogStreamName='ecs/nextflow/%s' % taskArn,
+            cacheTaskArn=resume_fargate_task_arn
         )
         db.session.add(e)
         db.session.commit()

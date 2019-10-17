@@ -13,6 +13,7 @@ class WorkflowExecution(db.Model):
     fargateMetadata = db.Column(MutableDict.as_mutable(JSON)) # added from AWS API call
     fargateLogGroupName = db.Column(db.String()) # this contains the nextflow execution log
     fargateLogStreamName = db.Column(db.String()) # this contains the nextflow execution log
+    cacheTaskArn = db.Column(db.String()) # fargateTaskArn of workflow used as cache (implies -resume)
     # following fields are metadata derived from nextflow weblog events
     nextflowRunName = db.Column(db.String()) # todo: consider just joining from TaskExecution?
     #nextflowRunId = db.Column(db.String())
