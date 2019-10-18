@@ -1,12 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 
 import { format, formatRelative } from 'date-fns/fp'
 import { GoTag as TagIcon, GoSync } from 'react-icons/go';
 
 import Container from "react-bootstrap/Container";
+import Button from "react-bootstrap/Button";
 import BootstrapTable from "react-bootstrap-table-next";
-import { navigate } from "@reach/router"
+import Tabs from "react-bootstrap/Tabs";
+import Tab from "react-bootstrap/Tab";
 
+import { navigate } from "@reach/router"
 import { useFetch } from "../hooks.js";
 
 import "bootstrap/dist/css/bootstrap.css";
@@ -26,6 +29,12 @@ const columns = [
             dataField: "id", // primary key
             dummy: true,
             hidden: true
+        },
+        {
+            dataField: "username",
+            text: "User",
+            headerStyle: { width: "10%" },
+            ...sortSettings
         },
         {
             text: "Workflow Name",
@@ -76,7 +85,9 @@ const columns = [
 
 function WorkflowListView(props) {
     document.title = "All Workflows"
-    const [data, isLoading, isError] = useFetch("/api/v1/workflow");
+    const [activeTabKey, setActiveTabKey ] = useState('username=me');
+    const [data, isLoading, isError] = useFetch("/api/v1/workflow?" + activeTabKey);
+    
 
     if (isLoading) {
         return <div>Loading</div>
@@ -87,21 +98,28 @@ function WorkflowListView(props) {
     return (
         <Container fluid>
         <h2>Workflow Executions</h2>
+            <br/>
+            <Tabs activeKey={activeTabKey} onSelect={setActiveTabKey} id="workflow-list-tabs" transition={false} >
+              <Tab eventKey="username=me" title="My Workflows" />
+              <Tab eventKey="" title="All" />
+              <Tab eventKey="status=failed" title="Failed" />
+            </Tabs>
+
             <BootstrapTable
-                keyField="id"
-                data={data}
-                columns={columns}
-                defaultSorted={[{dataField: "fargateCreatedAt", order: "desc"}]}
-                rowStyle={{cursor: "pointer"}}
-                rowEvents={{
-                    onClick: (e, row, rowIndex) => navigate(`/workflows/${row.fargateTaskArn}`)
-                }}
-                bootstrap4={true}
-                bordered={false}
-                hover={true}
-                condensed
-                noDataIndication="No workflows to list"
-            />
+                    keyField="id"
+                    data={data}
+                    columns={columns}
+                    defaultSorted={[{dataField: "fargateCreatedAt", order: "desc"}]}
+                    rowStyle={{cursor: "pointer"}}
+                    rowEvents={{
+                        onClick: (e, row, rowIndex) => navigate(`/workflows/${row.fargateTaskArn}`)
+                    }}
+                    bootstrap4={true}
+                    bordered={false}
+                    hover={true}
+                    condensed
+                    noDataIndication="No workflows to list"
+                />    
         </Container>
     )    
 }
