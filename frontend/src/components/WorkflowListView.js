@@ -102,7 +102,7 @@ function WorkflowListView(props) {
             <Tabs activeKey={activeTabKey} onSelect={setActiveTabKey} id="workflow-list-tabs" transition={false} >
               <Tab eventKey="username=me" title="My Workflows" />
               <Tab eventKey="" title="All" />
-              <Tab eventKey="status=failed" title="Failed" />
+              <Tab eventKey="status=error" title="Errors" />
             </Tabs>
 
             <BootstrapTable
