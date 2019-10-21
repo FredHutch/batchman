@@ -180,6 +180,11 @@ function WorkflowDetailView({ runArn }) {
                 </Row>
                 <Row>
                     <Col>
+                        <LabeledValue label="Username" value={runData.username || NA_STRING} />
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
                         <LabeledValue label="Nextflow Command" value={runData.nextflowMetadata.workflow.commandLine || NA_STRING} />
                     </Col>
                 </Row>
