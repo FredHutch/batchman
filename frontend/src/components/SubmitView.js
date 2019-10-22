@@ -1,9 +1,11 @@
 import React, { useState, useRef } from "react";
 import { useLocalStorage, useFetch } from "../hooks.js";
+
+import { navigate } from "@reach/router"
+
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-
 import Button from "react-bootstrap/Button";
 
 import { GoLightBulb, GoZap } from 'react-icons/go';
@@ -53,12 +55,39 @@ function SubmitView(props) {
     const configEditorRef = useRef(null);
 
     const [resumeData, resumeDataIsLoading, resumeDataIsError] = useFetch("/api/v1/workflow");
+    const [resumeSelection, setResumeSelection] = useState(null);
+
+    const [resultVal, setResultVal] = useState();
 
     const loadExample = () => {
         scriptEditorRef.current.editor.setValue(exampleScript,1)
         configEditorRef.current.editor.setValue(exampleConfig,1)
     }
 
+    const handleSubmit = () => {
+        const payload = {
+            nextflow_workflow: scriptValue,
+            nextflow_config: configValue,
+            resume_fargate_task_arn: resumeSelection || ""
+        }
+        fetch("/api/v1/workflow", {
+            method: "POST",
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then( response => {
+            if (!response.ok) { throw response }
+            return response.json()  //we only get here if there is no error
+        })
+        .then(data => {
+            navigate(`/workflows/${data.fargateTaskArn}`)
+        })
+        .catch(error => {error.json().then(setResultVal)})
+        
+    }
     return (
         <Container fluid>
         <Row>
@@ -127,8 +156,9 @@ function SubmitView(props) {
                 />
             </Col><Col>
                 <div style={{textAlign: "right"}}>
-                    <Button size="lg">Run Workflow <GoZap /></Button>
+                    <Button size="lg" onClick={handleSubmit}>Run Workflow <GoZap /></Button>
                 </div>
+                {resultVal !==null ? <pre className='text-danger'>{JSON.stringify(resultVal)}</pre> : null}
             </Col>
             </Row>
             </div>
