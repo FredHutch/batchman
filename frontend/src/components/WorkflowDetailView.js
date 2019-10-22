@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from '@reach/router'
+import { Link, navigate } from '@reach/router'
 
 import { format, formatRelative } from 'date-fns/fp'
 
@@ -219,6 +219,9 @@ function WorkflowDetailView({ runArn }) {
             </Button>
             <Button variant="outline-primary mt-3" style={{width: "100%"}} onClick={() => setNextflowScriptModalData({workflowTaskArn: runData.fargateTaskArn})} >
                 View Script and Config Files
+            </Button>
+            <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit?arn=${runData.fargateTaskArn}`)}>
+                Edit and Resubmit
             </Button>
         </Col>
         </Row>

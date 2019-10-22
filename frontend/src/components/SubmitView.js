@@ -1,7 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useLocalStorage, useFetch } from "../hooks.js";
 
 import { navigate } from "@reach/router"
+import * as queryString from 'query-string';
 
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
@@ -46,8 +47,14 @@ const EditorComponent = ({editorRef, value, onChangeHandler, isDarkMode, ...prop
         {...props}
     />)
 
+const handleError = (response) => {
+    if (!response.ok) { throw response }
+    return response.json()  //we only get here if there is no error
+}
+
 function SubmitView(props) {
     document.title = "Submit Workflow"
+    
     const [isDarkMode, setDarkMode] = useLocalStorage("darkmode", false)
     const [scriptValue, setScriptValue] = useState();
     const [configValue, setConfigValue] = useState();
@@ -64,6 +71,33 @@ function SubmitView(props) {
         configEditorRef.current.editor.setValue(exampleConfig,1)
     }
 
+    const {arn} = queryString.parse(props.location.search);
+    useEffect(
+        // fill in form if prior arn is passed in via query
+        () => {
+            
+            // Load Script
+            fetch(`/api/v1/workflow/${arn}/script`)
+            .then(handleError)
+            .then(data => {
+                scriptEditorRef.current.editor.setValue(data.contents,1)
+            })
+            .catch(error => {console.log(error)})
+
+            // Load config
+            fetch(`/api/v1/workflow/${arn}/config`)
+            .then(handleError)
+            .then(data => {
+                configEditorRef.current.editor.setValue(data.contents,1)
+            })
+            .catch(error => {console.log(error)})
+
+            // Set restart ARN
+            setResumeSelection(arn)
+        },
+        [props.arn]
+    )
+
     const handleSubmit = () => {
         const payload = {
             nextflow_workflow: scriptValue,
@@ -78,10 +112,7 @@ function SubmitView(props) {
             },
             body: JSON.stringify(payload)
         })
-        .then( response => {
-            if (!response.ok) { throw response }
-            return response.json()  //we only get here if there is no error
-        })
+        .then(handleError)
         .then(data => {
             navigate(`/workflows/${data.fargateTaskArn}`)
         })
@@ -91,10 +122,12 @@ function SubmitView(props) {
     return (
         <Container fluid>
         <Row>
-        <Col><h2>Submit Workflow</h2></Col>
+        <Col><h2>{arn ? "Resubmit" : "Submit Workflow"}</h2></Col>
         <Col style={{textAlign: "right"}}>
             <Button variant="outline-secondary" className="mr-3"
-                onClick={loadExample}>
+                onClick={loadExample}
+                disabled={arn !== undefined}
+            >
                 Load example
             </Button>
             <Button variant={isDarkMode ? "light" : "secondary"} onClick={() => setDarkMode(!isDarkMode)}>
@@ -125,35 +158,38 @@ function SubmitView(props) {
             <div className="workflow-detail-well mt-4 p-4" >
             <Row>
             <Col>
-                <Typeahead
-                    id="resume-box-selector"
-                    dropup={true}
-                    minLength={0}
-                    placeholder="Select prior run for resume..."
-                    options={resumeData}
-                    isLoading={resumeDataIsLoading}
-                    bsSize="large"
-                    clearButton={true}
-                    onChange={(i) => {
-                        const val = i[0] ? i[0].fargateTaskArn : null;
-                        setResumeSelection(val)
-                    }}
-                    labelKey={(i) => i.nextflowRunName || "unknown"}
-                    renderMenuItemChildren={(option, props, index) => {
-                        const status = parseStatus(option.runnertaskstatus, option.nextflowlastevent);
-                        const date_string = formatRelative(now, new Date(option.fargateCreatedAt)).capFirstLetter()
-                        return (
-                            <div className='searchresult'>
-                            <div className='key'>{option.nextflowRunName || "unknown"}</div>
-                                <div>
-                                     <span style={{fontSize: 12, color: "#999", paddingRight: 10}}>{date_string}</span>
-                                     <span className={"text-" + BADGE_STYLES[status]} style={{fontSize: 12, fontWeight: "bold"}}>
-                                        {status}
-                                    </span>
-                                </div>
-                            </div>);
-                    }}
-                />
+                { resumeSelection 
+                    ? <span>Resume from: {resumeSelection}</span>
+                    : <Typeahead
+                        id="resume-box-selector"
+                        dropup={true}
+                        minLength={0}
+                        placeholder="Select prior run for resume..."
+                        options={resumeData}
+                        isLoading={resumeDataIsLoading}
+                        bsSize="large"
+                        clearButton={true}
+                        onChange={(i) => {
+                            const val = i[0] ? i[0].fargateTaskArn : null;
+                            setResumeSelection(val)
+                        }}
+                        labelKey={(i) => i.nextflowRunName || "unknown"}
+                        renderMenuItemChildren={(option, props, index) => {
+                            const status = parseStatus(option.runnertaskstatus, option.nextflowlastevent);
+                            const date_string = formatRelative(now, new Date(option.fargateCreatedAt)).capFirstLetter()
+                            return (
+                                <div className='searchresult'>
+                                <div className='key'>{option.nextflowRunName || "unknown"}</div>
+                                    <div>
+                                         <span style={{fontSize: 12, color: "#999", paddingRight: 10}}>{date_string}</span>
+                                         <span className={"text-" + BADGE_STYLES[status]} style={{fontSize: 12, fontWeight: "bold"}}>
+                                            {status}
+                                        </span>
+                                    </div>
+                                </div>);
+                        }}
+                        />
+                }
             </Col><Col>
                 <div style={{textAlign: "right"}}>
                     <Button size="lg" onClick={handleSubmit}>Run Workflow <GoZap /></Button>
