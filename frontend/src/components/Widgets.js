@@ -27,7 +27,7 @@ export const LabeledValueList = ({label, values, ...props}) => (
 )
 
 
-export const parseStatus = ({aws_status, nf_status}) => {
+export const parseStatus = (aws_status, nf_status) => {
     if (aws_status == "PROVISIONING"){
         return "PROVISIONING"
     } else if (aws_status == "PENDING") {
@@ -65,7 +65,7 @@ export const BADGE_STYLES = {
 export const StatusDisplayBadge = ({aws_status, nf_status}) => {
     const text = parseStatus(aws_status, nf_status)
     const style = BADGE_STYLES[text] || "dark"
-    return (<Badge variant="dark">UNKNOWN ({aws_status} | {nf_status})</Badge>)
+    return (<Badge variant={style}>{text}</Badge>)
 };
 
 
