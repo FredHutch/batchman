@@ -22,6 +22,11 @@ import "ace-builds/src-noconflict/keybinding-sublime";
 
 import { exampleScript, exampleConfig } from "../examples.js"
 
+import { parseStatus, BADGE_STYLES } from "./Widgets.js"
+import { format, formatRelative } from 'date-fns/fp'
+
+const now = new Date();
+
 function SubmitView(props) {
     document.title = "Submit Workflow"
     const [isDarkMode, setDarkMode] = useLocalStorage("darkmode", false)
@@ -36,7 +41,7 @@ function SubmitView(props) {
         scriptEditorRef.current.editor.setValue(exampleScript,1)
         configEditorRef.current.editor.setValue(exampleConfig,1)
     }
-    console.log(resumeData.map((i)=>i.nextflowRunName || "none"))
+
     return (
         <Container fluid>
         <Row>
@@ -93,10 +98,25 @@ function SubmitView(props) {
                     dropup={true}
                     minLength={0}
                     placeholder="Select prior run for resume..."
-                    options={resumeData.map((i)=>i.nextflowRunName || "none")}
+                    options={resumeData}
                     isLoading={resumeDataIsLoading}
                     onSearch={(e)=>{console.log(e)}}
                     bsSize="large"
+                    labelKey="fargateTaskArn"
+                    renderMenuItemChildren={(option, props, index) => {
+                        const status = parseStatus(option.runnertaskstatus, option.nextflowlastevent);
+                        const date_string = formatRelative(now, new Date(option.fargateCreatedAt)).capFirstLetter()
+                        return (
+                            <div className='searchresult'>
+                            <div className='key'>{option.nextflowRunName}</div>
+                                <div>
+                                     <span style={{fontSize: 12, color: "#999", paddingRight: 10}}>{date_string}</span>
+                                     <span className={BADGE_STYLES[status]} style={{fontSize: 12, fontWeight: "bold"}}>
+                                        {status}
+                                    </span>
+                                </div>
+                            </div>);
+                    }}
                 />
             </Col><Col>
                 <div style={{textAlign: "right"}}>
