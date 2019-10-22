@@ -12,7 +12,7 @@ import "bootstrap/dist/css/bootstrap.css";
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import 'react-bootstrap-typeahead/css/Typeahead-bs4.css';
 
-import { AsyncTypeahead } from 'react-bootstrap-typeahead';
+import { Typeahead } from 'react-bootstrap-typeahead';
 
 import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/mode-groovy";
@@ -26,6 +26,23 @@ import { parseStatus, BADGE_STYLES } from "./Widgets.js"
 import { format, formatRelative } from 'date-fns/fp'
 
 const now = new Date();
+
+const EditorComponent = ({editorRef, value, onChangeHandler, isDarkMode, ...props}) => (
+    <AceEditor
+        ref={editorRef}
+        value={value}
+        onChange={onChangeHandler}
+        mode="groovy"
+        theme={isDarkMode ? "solarized_dark" : "solarized_light"}
+        name="script-editor-div"
+        editorProps={{ $blockScrolling: true }}
+        height="100%"
+        width="100%"
+        showPrintMargin={false}
+        focus={true}
+        keyboardHandler="sublime"
+        {...props}
+    />)
 
 function SubmitView(props) {
     document.title = "Submit Workflow"
@@ -59,59 +76,49 @@ function SubmitView(props) {
         <Row>
         <Col md="12" lg="6">
             <h4 className="mt-3">Nextflow script</h4>
-             <AceEditor
-                ref={scriptEditorRef}
+            <EditorComponent 
+                editorRef={scriptEditorRef}
                 value={scriptValue}
-                onChange={setScriptValue}
-                mode="groovy"
-                theme={isDarkMode ? "solarized_dark" : "solarized_light"}
-                name="script-editor-div"
-                editorProps={{ $blockScrolling: true }}
+                onChangeHandler={setScriptValue}
+                isDarkMode={isDarkMode}
                 height="75vh"
-                width="100%"
-                showPrintMargin={false}
-                focus={true}
-                keyboardHandler="sublime"
               />
         </Col>
         <Col md="12" lg="6">
             <h4 className="mt-3">Config</h4>
-             <AceEditor
-                ref={configEditorRef}
+             <EditorComponent
+                editorRef={configEditorRef}
                 value={configValue}
-                onChange={setConfigValue}
-                mode="groovy"
-                theme={isDarkMode ? "solarized_dark" : "solarized_light"}
-                name="config-editor-div"
-                editorProps={{ $blockScrolling: true }}
+                onChangeHandler={setConfigValue}
+                isDarkMode={isDarkMode}
                 height="60vh"
-                width="100%"
-                showPrintMargin={false}
-                focus={false}
-                keyboardHandler="sublime"
               />
             <div className="workflow-detail-well mt-4 p-4" >
             <Row>
             <Col>
-                <AsyncTypeahead
+                <Typeahead
                     id="resume-box-selector"
                     dropup={true}
                     minLength={0}
                     placeholder="Select prior run for resume..."
                     options={resumeData}
                     isLoading={resumeDataIsLoading}
-                    onSearch={(e)=>{console.log(e)}}
                     bsSize="large"
-                    labelKey="fargateTaskArn"
+                    clearButton={true}
+                    onChange={(i) => {
+                        const val = i[0] ? i[0].fargateTaskArn : null;
+                        setResumeSelection(val)
+                    }}
+                    labelKey={(i) => i.nextflowRunName || "unknown"}
                     renderMenuItemChildren={(option, props, index) => {
                         const status = parseStatus(option.runnertaskstatus, option.nextflowlastevent);
                         const date_string = formatRelative(now, new Date(option.fargateCreatedAt)).capFirstLetter()
                         return (
                             <div className='searchresult'>
-                            <div className='key'>{option.nextflowRunName}</div>
+                            <div className='key'>{option.nextflowRunName || "unknown"}</div>
                                 <div>
                                      <span style={{fontSize: 12, color: "#999", paddingRight: 10}}>{date_string}</span>
-                                     <span className={BADGE_STYLES[status]} style={{fontSize: 12, fontWeight: "bold"}}>
+                                     <span className={"text-" + BADGE_STYLES[status]} style={{fontSize: 12, fontWeight: "bold"}}>
                                         {status}
                                     </span>
                                 </div>
