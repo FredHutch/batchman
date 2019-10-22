@@ -12,6 +12,10 @@
     padding: 10px;
 }
 
+.react-bootstrap-table > .table th{
+  border-top: none;
+}
+
 .labeled-value {
 	margin-bottom: 20px;
   margin-right: 20px;

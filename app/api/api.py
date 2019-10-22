@@ -13,6 +13,8 @@ from app.models import (
 )
 from app import db
 
+from app.auth import get_jwt_identity
+
 ecs_client = boto3.client('ecs', region_name='us-west-2')
 batch_client = boto3.client('batch', region_name='us-west-2')
 s3_client = boto3.client('s3', region_name='us-west-2')
@@ -33,6 +35,9 @@ class CreateWorkflowArgs(Schema):
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
 
+class ListWorkflowArgs(Schema):
+    status = fields.String(location="query")
+    username = fields.String(location="query")
 
 WorkflowApi = Blueprint(
     'WorkflowApi', __name__,
@@ -51,17 +56,18 @@ class WorkflowList(MethodView):
             Key=s3_key
         )
 
+    @WorkflowApi.arguments(ListWorkflowArgs)
     @WorkflowApi.response(WorkflowExecutionSchema(many=True))
-    def get(self):
+    def get(self, args):
         """List all workflows"""
-
-        res = db.session.execute("""
+        sql = ["""
         SELECT 
             w."fargateTaskArn", w."fargateCreatedAt", w."nextflowRunName",
             w."fargateLastStatus" as runnerTaskStatus,
             w."nextflowLastEvent" as nextflowLastEvent,
             w."nextflowMetadata"->'workflow'->'manifest' as manifest,
-            w."cacheTaskArn",
+            w."cacheTaskArn", 
+            w."username",
             task_counts."submitted_task_count",
             task_counts."running_task_count",
             task_counts."completed_task_count"
@@ -76,8 +82,25 @@ class WorkflowList(MethodView):
             GROUP BY t."fargateTaskArn"
         ) as task_counts
             ON task_counts."fargateTaskArn" = w."fargateTaskArn"
-        ORDER BY w."fargateCreatedAt" DESC;
-        """)
+        """]
+        where_statements = []
+        where_args = {}
+        if "username" in args:
+            where_statements += ['w."username" = :username']
+            if args["username"] == "me":
+                where_args["username"] = get_jwt_identity()
+            else:
+                where_args["username"] = args["username"]
+        if "status" in args:
+            where_statements += ['w."nextflowLastEvent" = :status']
+            where_args["status"] = args["status"]
+
+        if len(where_statements) > 0:
+            sql += ["WHERE"]
+            sql.extend(where_statements)
+        sql += ['ORDER BY w."fargateCreatedAt" DESC;']
+        print (where_args)
+        res = db.session.execute("\n".join(sql), where_args)
         res = [dict(row) for row in res]
         return jsonify(res)
 
@@ -162,7 +185,8 @@ class WorkflowList(MethodView):
             fargateMetadata=infoJson,
             fargateLogGroupName='/ecs/nextflow-runner',
             fargateLogStreamName='ecs/nextflow/%s' % taskArn,
-            cacheTaskArn=resume_fargate_task_arn
+            cacheTaskArn=resume_fargate_task_arn,
+            username=get_jwt_identity()
         )
         db.session.add(e)
         db.session.commit()

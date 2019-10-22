@@ -41,6 +41,9 @@ class ProductionConfig(Config):
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI= "postgresql://@127.0.0.1/batchman"
     AUTH_METHOD = 'MOCK'
+    MOCK_USERNAME = 'nkrumm'
+    MOCK_GROUPS = ['u_labmed_mock_group']
+
     OPENAPI_URL_PREFIX = '/docs'
     OPENAPI_REDOC_PATH = '/redoc'
     OPENAPI_SWAGGER_UI_PATH = '/swagger'

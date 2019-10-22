@@ -23,6 +23,8 @@ class WorkflowExecution(db.Model):
     nextflowWorkflowEndDateTime = db.Column(db.DateTime(timezone=True))
     nextflowExitStatus = db.Column(db.String())    
     nextflowIsSuccess = db.Column(db.Boolean())
+    # these fields record user/batchman data
+    username = db.Column(db.String()) # the UW NetId of the submitting user
 
 class WorkflowExecutionSchema(ModelSchema):
     class Meta:
@@ -63,3 +65,4 @@ class EcsEvent(db.Model):
     taskArn = db.Column(db.String())
     # ECS event data fields
     data = db.Column(db.JSON())
+
