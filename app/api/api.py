@@ -1,4 +1,5 @@
 import boto3
+import botocore
 import uuid
 import urllib
 import sqlalchemy
@@ -27,11 +28,11 @@ class CreateWorkflowArgs(Schema):
     # Future versions of `flask_rest_api` may more natively support this.
     class Meta:
         unknown = INCLUDE
-    nextflow_version = fields.String(location="form")
-    nextflow_arguments = fields.String(location="form")
-    nextflow_workflow = fields.String(location="form")
-    nextflow_config = fields.String(location="form")
-    resume_fargate_task_arn = fields.String(location="form", required=False) # if present, will attempt to resume from prior taskArn
+    nextflow_version = fields.String(location="json")
+    nextflow_arguments = fields.String(location="json")
+    nextflow_workflow = fields.String(location="json")
+    nextflow_config = fields.String(location="json")
+    resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
 
@@ -109,12 +110,16 @@ class WorkflowList(MethodView):
     def post(self, args):
         """Submit new workflow for execution"""
         # 1. If a workflow and config file was uploaded
+        print(args)
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
             uuid_key = self._generate_key()
             workflow_key = "nextflow_scripts/%s/%s/main.nf" % (uuid_key[0:2], uuid_key)
             config_key = "nextflow_scripts/%s/%s/nextflow.config" % (uuid_key[0:2], uuid_key)
-            self._upload_to_s3(workflow_key, args["nextflow_workflow"])
-            self._upload_to_s3(config_key, args["nextflow_config"])
+            try:
+                self._upload_to_s3(workflow_key, args["nextflow_workflow"])
+                self._upload_to_s3(config_key, args["nextflow_config"])
+            except botocore.exceptions.ClientError:
+                return jsonify({"error": "unable to save scripts"}), 500
         # elif
         # -- GIT link provided. Probably pass to nf directly? 
         # elif
@@ -134,44 +139,46 @@ class WorkflowList(MethodView):
         workflow_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], workflow_key)
         config_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], config_key)
         nf_session_loc = "s3://" + current_app.config["NEXTFLOW_S3_SESSION_CACHE"]
-
-        res = ecs_client.run_task(
-            cluster=current_app.config["ECS_CLUSTER"],
-            taskDefinition=current_app.config["NEXTFLOW_TASK_DEFINITION"],
-            overrides={
-                "containerOverrides": [
-                    {
-                        "name": "nextflow",
-                        "command": ["runner.sh", workflow_s3_loc, config_s3_loc],
-                        "environment": [
-                            {
-                                "name": "BATCHMAN_LOG_ENDPOINT",
-                                "value": current_app.config["BATCHMAN_LOG_ENDPOINT"]
-                            },
-                            {
-                                "name": "NEXTFLOW_OPTIONS",
-                                "value": nextflow_options
-                            },
-                            {
-                                "name": "NF_SESSION_CACHE_DIR",
-                                "value": nf_session_loc
-                            },
-                            {
-                                "name": "NF_SESSION_CACHE_ARN",
-                                "value": resume_fargate_task_arn
-                            },
-                        ],
-                    }
-                ]
-            },
-            launchType="FARGATE",
-            networkConfiguration={
-                "awsvpcConfiguration": {
-                    "subnets": current_app.config["ECS_SUBNETS"],
-                    "assignPublicIp": "ENABLED"
+        try:
+            res = ecs_client.run_task(
+                cluster=current_app.config["ECS_CLUSTER"],
+                taskDefinition=current_app.config["NEXTFLOW_TASK_DEFINITION"],
+                overrides={
+                    "containerOverrides": [
+                        {
+                            "name": "nextflow",
+                            "command": ["runner.sh", workflow_s3_loc, config_s3_loc],
+                            "environment": [
+                                {
+                                    "name": "BATCHMAN_LOG_ENDPOINT",
+                                    "value": current_app.config["BATCHMAN_LOG_ENDPOINT"]
+                                },
+                                {
+                                    "name": "NEXTFLOW_OPTIONS",
+                                    "value": nextflow_options
+                                },
+                                {
+                                    "name": "NF_SESSION_CACHE_DIR",
+                                    "value": nf_session_loc
+                                },
+                                {
+                                    "name": "NF_SESSION_CACHE_ARN",
+                                    "value": resume_fargate_task_arn
+                                },
+                            ],
+                        }
+                    ]
                 },
-            },
-        )
+                launchType="FARGATE",
+                networkConfiguration={
+                    "awsvpcConfiguration": {
+                        "subnets": current_app.config["ECS_SUBNETS"],
+                        "assignPublicIp": "ENABLED"
+                    },
+                },
+            )
+        except botocore.exceptions.ClientError:
+            return jsonify({"error": "unable to launch job"}), 500
 
         taskArn = res['tasks'][0]['taskArn'].split(":task/")[1]
         # save to database -- must serialize the date to string first

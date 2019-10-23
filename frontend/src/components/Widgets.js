@@ -27,29 +27,45 @@ export const LabeledValueList = ({label, values, ...props}) => (
 )
 
 
-export const StatusDisplayBadge = ({aws_status, nf_status}) => {
+export const parseStatus = (aws_status, nf_status) => {
     if (aws_status == "PROVISIONING"){
-        return (<Badge variant="secondary">PROVISIONING</Badge>)
+        return "PROVISIONING"
     } else if (aws_status == "PENDING") {
-        return (<Badge variant="secondary">PENDING</Badge>)
+        return "PENDING"
     } else if (aws_status == "RUNNING") {
         if (nf_status == "started") {
-            return (<Badge variant="info">RUNNING</Badge>)
+            return "RUNNING"
         } else if (nf_status == "completed") {
-            return (<Badge variant="success">COMPLETE</Badge>)
+            return "COMPLETE"
         } else if (nf_status == "error") {
-            return (<Badge variant="danger">ERROR</Badge>)
+            return "ERROR"
         } else {
-            return (<Badge variant="secondary">STARTING</Badge>)
+            return "STARTING"
         }
     } else if (aws_status == "STOPPED") {
         if (nf_status == "completed") {
-            return (<Badge variant="success">COMPLETE</Badge>)
+            return "COMPLETE"
         } else if (nf_status == "error") {
-            return (<Badge variant="danger">ERROR</Badge>)
+            return "ERROR"
         }
     }
-    return (<Badge variant="dark">UNKNOWN ({aws_status} | {nf_status})</Badge>)
+    return `UNKNOWN (${aws_status} | ${nf_status})`
+};
+
+
+export const BADGE_STYLES = {
+    "PROVISIONING": "secondary",
+    "PENDING": "secondary",
+    "STARTING": "secondary",
+    "RUNNING": "info",
+    "COMPLETE": "success",
+    "ERROR": "danger"
+}
+
+export const StatusDisplayBadge = ({aws_status, nf_status}) => {
+    const text = parseStatus(aws_status, nf_status)
+    const style = BADGE_STYLES[text] || "dark"
+    return (<Badge variant={style}>{text}</Badge>)
 };
 
 

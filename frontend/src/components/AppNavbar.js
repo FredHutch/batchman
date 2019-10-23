@@ -16,7 +16,7 @@ class AppNavbar extends Component {
 		    <div>
 		    	<Nav className="mr-auto">
 		      	<Nav.Link href="/workflow">Workflows</Nav.Link>
-		      	<Nav.Link href="/api/submit">Submit</Nav.Link>
+		      	<Nav.Link href="/submit">Submit</Nav.Link>
 		    	</Nav>
 		    </div>
 			<div></div>

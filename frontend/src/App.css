@@ -79,3 +79,10 @@ div.toolbar .btn-outline-secondary:focus, .btn-outline-secondary.focus {
     outline:none !important;
     box-shadow:none !important;
 }
+
+div.searchresult > .key {
+  color: #333;
+  font-size: 14;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
