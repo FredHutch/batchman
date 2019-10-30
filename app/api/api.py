@@ -128,12 +128,12 @@ class WorkflowList(MethodView):
             print(args)
             return "Invalid nextflow commands", 500
         
+        nextflow_options = ["-with-trace"]
         if args.get("resume_fargate_task_arn", "") != "":
             # resume from prior nextflow execution
             resume_fargate_task_arn = args["resume_fargate_task_arn"]
-            nextflow_options = "-resume"
+            nextflow_options.append("-resume")
         else:
-            nextflow_options = ""
             resume_fargate_task_arn = ""
 
         workflow_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], workflow_key)
@@ -155,7 +155,7 @@ class WorkflowList(MethodView):
                                 },
                                 {
                                     "name": "NEXTFLOW_OPTIONS",
-                                    "value": nextflow_options
+                                    "value": " ".join(nextflow_options)
                                 },
                                 {
                                     "name": "NF_SESSION_CACHE_DIR",
