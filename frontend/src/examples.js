@@ -42,19 +42,21 @@ process multiqc {
 export const exampleConfig = `\
 params.input_folder = 's3://uwlm-ngs-data/targeted/opx/fastqs/2019/190104_HA0570_OncoPlexKAPA327-OPXv5/sample/32725_A04_OPXv5_HA0570/'
 
-process.executor = 'awsbatch'
-
 workDir = 's3://uwlm-personal/nkrumm/nextflow-work-dir'
-tmpDir = '/docker_scratch'
-process.queue = 'default-queue'
 
-executor.awscli = '/home/ec2-user/miniconda/bin/aws'
 executor.disableRemoteBinDir = true
+
+process {
+  scratch = "/docker_scratch"
+  queue = 'default-queue'
+  executor = 'awsbatch'
+}
 
 aws {
       region = 'us-west-2'
       batch {
         volumes = '/docker_scratch'
+        cliPath = '/home/ec2-user/miniconda/bin/aws'
       }
 }
 `
