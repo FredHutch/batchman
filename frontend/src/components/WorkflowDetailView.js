@@ -24,6 +24,7 @@ import {PrettyPrintJson, LabeledValue, LabeledValueList,
     StatusDisplayBadge, S3Link, sortSettings} from "./Widgets.js"
 
 import {GanttChart} from "./GanttChart.js"
+import {ResourceChart} from "./ResourceChart.js"
 
 import TaskDetailModal from "./TaskDetailModal.js"
 import NextflowLogModal from "./NextflowLogModal.js"
@@ -245,6 +246,9 @@ function WorkflowDetailView({ runArn }) {
                   </Tab>
                   <Tab eventKey="raw" title="JSON">
                     <PrettyPrintJson data={taskData} />
+                  </Tab>
+                  <Tab eventKey="resources" title="Resource Utilization">
+                    <ResourceChart data={taskData} />
                   </Tab>
                 </Tabs>
             </Col>
