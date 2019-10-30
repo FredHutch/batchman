@@ -248,7 +248,7 @@ function WorkflowDetailView({ runArn }) {
                     <PrettyPrintJson data={taskData} />
                   </Tab>
                   <Tab eventKey="resources" title="Resource Utilization">
-                    <ResourceChart data={taskData} />
+                    <ResourceChart taskData={taskData} />
                   </Tab>
                 </Tabs>
             </Col>

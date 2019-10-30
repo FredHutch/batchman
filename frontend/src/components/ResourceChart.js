@@ -3,35 +3,38 @@ import {Vega} from 'react-vega';
 
 var ChartSpec={
   "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
-  "width": 800,
-  "height": 400,
-  "layer": [
-    {
-      "mark": {"type": "circle"},
-      "encoding": {
-        "color": {"field": "process", "type": "nominal"},
-        "opacity": {"value": 0.7},
-        "y": {
-          "field": "process",
-          "type": "ordinal",
-          "title":  null
-        },
-        "x": {
-          "field": "%cpu",
-          "type": "quantitative",
-          "title": "% CPU",
-          "axis": {
-            "grid": false,
-            "tickCount": 10
-          }
-        },
-        "tooltip": [
-          {"field": "task", "type": "ordinal"},
-          {"field": "%cpu", "type": "quantitative"}
-        ]
+  "repeat": ["%cpu", "%mem"],
+  "columns": 1,
+  "spec": {
+    "width": 800,
+    "height": 200,
+    "layer": [
+      {
+        "mark": {"type": "tick"},
+        "encoding": {
+          "color": {"field": "process", "type": "nominal"},
+          "opacity": {"value": 0.7},
+          "y": {
+            "field": "process",
+            "type": "ordinal",
+            "title":  null
+          },
+          "x": {
+            "field": {"repeat": "repeat"},
+            "type": "quantitative",
+            "axis": {
+              "grid": true,
+              "tickCount": 10
+            }
+          },
+          "tooltip": [
+            {"field": "task", "type": "ordinal"},
+            {"field": "%cpu", "type": "quantitative"}
+          ]
+        }
       }
-    }
-  ],
+    ]
+  },
   "config": {
     "view": {
        "stroke": "transparent"
@@ -56,4 +59,5 @@ export const ResourceChart = ({taskData}) => {
   }))
 	ChartSpec.data = {"values": data};
 	return <Vega spec={ChartSpec} />
+
 }
