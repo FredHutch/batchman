@@ -56,6 +56,7 @@ const runtimeDisplay = (cell, row) => {
         : timeConversion(new Date() - row.taskLastTrace.submit)
 }
 
+
 const TaskTable = ({ data, handleClick }) => {
     const statusClasses = {
         "COMPLETED": "text-success",
@@ -93,8 +94,10 @@ const TaskTable = ({ data, handleClick }) => {
             headerStyle: { width: "10%" },
             formatter: (cell, row) => (
                 <span className={statusClasses[cell]}>
-                    {cell}{row.taskExitCode ? ` - ${row.taskExitReason} (Exit Code: ${row.taskExitCode})` : null}
-                </span>),
+                    {cell}
+                    {row.taskExitReason ? ` - ${row.taskExitReason}` : null}
+                    {row.taskExitCode ? ` (Exit Code: ${row.taskExitCode})` : null}
+                 </span>),
             ...sortSettings
         },
         {
