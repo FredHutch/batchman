@@ -91,7 +91,10 @@ const TaskTable = ({ data, handleClick }) => {
             dataField: "taskLastTrace.status",
             text: "Last Status",
             headerStyle: { width: "10%" },
-            formatter: (cell) => (<span className={statusClasses[cell]}>{cell}</span>),
+            formatter: (cell, row) => (
+                <span className={statusClasses[cell]}>
+                    {cell}{row.taskExitCode ? ` - ${row.taskExitReason} (Exit Code: ${row.taskExitCode})` : null}
+                </span>),
             ...sortSettings
         },
         {

@@ -148,19 +148,27 @@ class ReceiveWeblog(MethodView):
             )
             db.session.add(e)
             
-            # save task loggroup/stream names to TaskExecution record
-            # if not already recorded
+            # save task details to mutable TaskExecution record
             try:
                 t = db.session.query(TaskExecution)\
                     .filter(TaskExecution.taskArn==taskArn).one()
             except sqlalchemy.orm.exc.NoResultFound:
                 abort(404)
 
-            logStreamName = data['detail']['container'].get("logStreamName")
+            containerData = data['detail']['container']
+            
+            # update logStreamName if present
+            logStreamName = containerData.get("logStreamName")
             if logStreamName and (t.taskLogGroupName is None):
                 t.taskLogGroupName = '/aws/batch/job'
                 t.taskLogStreamName = logStreamName
-                db.session.add(t)
+
+            # update exit status/reason
+            if containerData.get('exitCode') or containerData.get('reason'):
+                t.taskExitCode = containerData.get('exitCode')
+                t.taskExitReason = containerData.get('reason')
+            
+            db.session.add(t)
 
         elif event_type == 'FARGATE_EVENT':
             fargateTaskArn = data['detail']['taskArn'].split(":task/")[1]
