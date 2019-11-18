@@ -6,13 +6,18 @@ import WorkflowListView from   "./components/WorkflowListView.js";
 import WorkflowDetailView from "./components/WorkflowDetailView.js";
 import SubmitView from "./components/SubmitView.js";
 
+import { ClientContextProvider } from 'react-fetching-library';
+import { createClient } from 'react-fetching-library';
+
 import './App.css';
 
 
-
 function App() {
+  const client = createClient({});
+
   return (
     <div className="app">
+    <ClientContextProvider client={client}>
       <AppNavbar default />
       <div className='offset-top'>
         <Router>
@@ -21,6 +26,7 @@ function App() {
           <SubmitView path="/submit" />
         </Router>
       </div>
+    </ClientContextProvider>
     </div>
   );
 }

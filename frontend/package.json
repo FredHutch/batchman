@@ -13,6 +13,7 @@
     "react-bootstrap-table-next": "^3.2.1",
     "react-bootstrap-typeahead": "^3.4.7",
     "react-dom": "^16.10.2",
+    "react-fetching-library": "^1.5.12",
     "react-icons": "^3.7.0",
     "react-scripts": "3.2.0",
     "react-string-replace": "^0.4.4",

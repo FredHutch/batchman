@@ -39,7 +39,10 @@ class TaskExecution(db.Model):
     taskLogGroupName = db.Column(db.String()) # this contains the AWS Batch log
     taskLogStreamName = db.Column(db.String()) # this contains the AWS Batch log 
     taskLastTrace = db.Column(MutableDict.as_mutable(JSON)) # added via weblog
-    taskLastEvent = db.Column(db.String()) # todo: consider if we need to record AWS Batch status
+    taskLastEvent = db.Column(db.String()) # nextflow last event name
+    taskExitCode = db.Column(db.String()) # batch/container exit code (data.container.exitCode)
+    taskExitReason = db.Column(db.String()) # batch/container exit reason (data.container.reason)
+
 
 class TaskExecutionSchema(ModelSchema):
     class Meta:

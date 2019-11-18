@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import { useQuery } from 'react-fetching-library';
+import { useLocalStorage } from '../hooks.js';
+
 import { Link, navigate } from '@reach/router'
 
 import { format, formatRelative } from 'date-fns/fp'
@@ -16,12 +19,12 @@ import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import BootstrapTable from "react-bootstrap-table-next";
 
-import { GoTag as TagIcon, GoSync } from 'react-icons/go';
+import Modal from "react-bootstrap/Modal";
 
-import { useFetch } from "../hooks.js";
+import { GoTag as TagIcon, GoSync, GoStop } from 'react-icons/go';
 
 import {PrettyPrintJson, LabeledValue, LabeledValueList, 
-    StatusDisplayBadge, S3Link, sortSettings} from "./Widgets.js"
+    StatusDisplayBadge, S3Link, sortSettings, parseStatus} from "./Widgets.js"
 
 import {GanttChart} from "./GanttChart.js"
 import {ResourceChart} from "./ResourceChart.js"
@@ -55,6 +58,7 @@ const runtimeDisplay = (cell, row) => {
         ? timeConversion(row.taskLastTrace.realtime)
         : timeConversion(new Date() - row.taskLastTrace.submit)
 }
+
 
 const TaskTable = ({ data, handleClick }) => {
     const statusClasses = {
@@ -91,7 +95,12 @@ const TaskTable = ({ data, handleClick }) => {
             dataField: "taskLastTrace.status",
             text: "Last Status",
             headerStyle: { width: "10%" },
-            formatter: (cell) => (<span className={statusClasses[cell]}>{cell}</span>),
+            formatter: (cell, row) => (
+                <span className={statusClasses[cell]}>
+                    {cell}
+                    {row.taskExitReason ? ` - ${row.taskExitReason}` : null}
+                    {row.taskExitCode ? ` (Exit Code: ${row.taskExitCode})` : null}
+                 </span>),
             ...sortSettings
         },
         {
@@ -124,16 +133,54 @@ const TaskTable = ({ data, handleClick }) => {
             />
 }
 
+const StopWorkflowButton = ({aws_status, nf_status, workflow_arn}) => {
+    const status = parseStatus(aws_status, nf_status);
+    const {loading, payload, error, query } = useQuery({endpoint: `/api/v1/workflow/${workflow_arn}`, method: 'DELETE'}, false);
+    const [isArmed, setArmed] = useState(false);
+    const [isStopping, setIsStopping] = useLocalStorage(workflow_arn + ".stopStatus", false);
+    const handleStop = () => {
+        setArmed(false);
+        setIsStopping(true);
+        query();
+    }
+    const button_text = isStopping 
+        ? <span>Stopping...</span>
+        : <span><GoStop style={{marginTop: "-3px"}}/> Stop Workflow</span>;
+
+    if (["PROVISIONING", "PENDING", "STARTING", "RUNNING"].indexOf(status) > -1){
+        return (
+            <React.Fragment>
+            <Button variant="outline-danger mt-3" style={{width: "100%"}} onClick={() => setArmed(true)} disabled={isStopping}>
+             {button_text}
+            </Button>
+            <Modal show={isArmed} onHide={()=>setArmed(false)} animation={false}>
+              <Modal.Body><b>Are you sure you want to stop this workflow?</b> Intermediate files will be cached for future restart.</Modal.Body>
+              <Modal.Footer>
+                <Button variant="default" onClick={()=>setArmed(false)}>Cancel</Button>
+                <Button variant="danger" onClick={()=> handleStop()}>Stop Workflow</Button>
+              </Modal.Footer>
+            </Modal>
+            </React.Fragment>);
+    } else {
+        return null;
+    }
+}
+
 function WorkflowDetailView({ runArn }) {
     document.title = "Workflow Detail"
-    const [runData, runDataIsLoading, runDataisError] = useFetch(`/api/v1/workflow/${runArn}`);
-    const [taskData, taskDataIsLoading, taskDataisError] = useFetch(`/api/v1/workflow/${runArn}/tasks`);
+    const { loading: runDataIsLoading, payload: runData, error: runDataisError } = useQuery({endpoint: `/api/v1/workflow/${runArn}`, method: 'GET'});
+    const { loading: taskDataIsLoading, payload: taskData, error: taskDataisError } = useQuery({endpoint: `/api/v1/workflow/${runArn}/tasks`, method: 'GET'});
+
     const [taskModalData, setTaskModalData] = useState(false);
     const [nextflowModalData, setNextflowModalData] = useState(false);
     const [nextflowScriptData, setNextflowScriptModalData] = useState(false);
     const [summaryViewSetting, setSummaryViewSetting] = useState("summary"); // "summary" | "json"
+    
     if (runDataIsLoading || taskDataIsLoading) {
         return <div>Loading</div>
+    }
+    if (runDataisError || taskDataisError) {
+        return <div>Error</div>
     }
 
     if (runData.nextflowMetadata == null) {
@@ -176,7 +223,12 @@ function WorkflowDetailView({ runArn }) {
                         <LabeledValue label="Runtime" value={runTime} inline />
                     </Col>
                     <Col md="3" sm="12" style={{textAlign: "right"}}>
-                        <h3 style={{marginTop: 4, marginRight: 10}}><StatusDisplayBadge aws_status={runData.fargateLastStatus} nf_status={runData.nextflowLastEvent} /></h3>
+                        <h3 style={{marginTop: 4, marginRight: 10}}>
+                            <StatusDisplayBadge
+                                aws_status={runData.fargateLastStatus}
+                                nf_status={runData.nextflowLastEvent}
+                            />
+                        </h3>
                     </Col>
                 </Row>
                 <Row>
@@ -224,6 +276,11 @@ function WorkflowDetailView({ runArn }) {
             <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit?arn=${runData.fargateTaskArn}`)}>
                 Edit and Resubmit
             </Button>
+            <StopWorkflowButton 
+                aws_status={runData.fargateLastStatus}
+                nf_status={runData.nextflowLastEvent}
+                workflow_arn={runData.fargateTaskArn}
+            />
         </Col>
         </Row>
         { runData.nextflowMetadata.workflow.errorReport
