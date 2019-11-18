@@ -211,6 +211,18 @@ class Workflow(MethodView):
         except sqlalchemy.orm.exc.NoResultFound:
             abort(404)
 
+    def delete(self, id):
+        """Stop workflow by workflow id"""
+        try:
+            res = ecs_client.stop_task(
+                cluster=current_app.config["ECS_CLUSTER"],
+                task=id,
+                reason="Task stopped by user (%s)" % get_jwt_identity()
+            )
+            return jsonify({"msg": "ok"})
+        except botocore.exceptions.ClientError:
+            return jsonify({"error": "unable to delete workflow"}), 500
+
 
 @WorkflowApi.route('/workflow/<string:id>/logs')
 class WorkflowLogs(MethodView):
