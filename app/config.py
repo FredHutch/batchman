@@ -21,16 +21,16 @@ class Config(object):
     )
     OPENAPI_VERSION = '3.0.2'
     API_PREFIX = '/api/v1'
-
-    # configure external api
     EXTERNAL_API_PREFIX = '/api/external'
+    
+    # configure api
     API_KEY = os.environ.get('API_KEY') or get_api_key()
-    BATCHMAN_LOG_ENDPOINT = "https://batchman-api.labmed.uw.edu/api/external/weblog?key=%s" % API_KEY
+    API_ENDPOINT = "http://batchman.labmed.internal"
 
     # ECS/Batch configuration
-    ECS_CLUSTER = 'AWSBatchComputeEnvironm-b5f4332881fd487_Batch_d83c5648-49e4-30cd-add6-a3877df94e50'
-    ECS_SUBNETS = ["subnet-0dd677ebd49d24d08"]
-    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:2'
+    ECS_CLUSTER = 'AWSBatchComputeEnvironm-23ed74f37771bd0_Batch_e03e3939-7a56-3ee8-8394-1f95f5cb3b10'
+    ECS_SUBNETS = ["subnet-089bdabca179ab23f"]
+    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:3'
     NEXTFLOW_S3_TEMP = 'uwlm-personal'
     NEXTFLOW_S3_SESSION_CACHE = 'uwlm-personal/nf_session_data'
 

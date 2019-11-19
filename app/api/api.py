@@ -150,8 +150,12 @@ class WorkflowList(MethodView):
                             "command": ["runner.sh", workflow_s3_loc, config_s3_loc],
                             "environment": [
                                 {
-                                    "name": "BATCHMAN_LOG_ENDPOINT",
-                                    "value": current_app.config["BATCHMAN_LOG_ENDPOINT"]
+                                    "name": "API_ENDPOINT",
+                                    "value": current_app.config["API_ENDPOINT"]
+                                },
+                                {
+                                    "name": "API_KEY",
+                                    "value": current_app.config["API_KEY"]
                                 },
                                 {
                                     "name": "NEXTFLOW_OPTIONS",
