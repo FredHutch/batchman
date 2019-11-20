@@ -6,6 +6,7 @@ from marshmallow import Schema, INCLUDE, fields
 
 from app.models import WeblogEvent
 from app.common import require_apikey
+from app.auth import validate_api_key
 from app import db
 
 from app.models import WorkflowExecution, TaskExecution, EcsEvent, WeblogEvent
@@ -43,6 +44,9 @@ class ReceiveWeblog(MethodView):
         Requires key=API_KEY and taskArn=UUID (corresponding to 
         nextflow-runner taskArn) in query args."""
         fargateTaskArn = query_args["taskArn"]
+        # Validate API_KEY
+        if not validate_api_key(fargateTaskArn, query_args['key']):
+            return "Invalid API Key", 403
         # First, save event in WeblogEvent table
         data["fargateTaskArn"] = fargateTaskArn
         e = WeblogEvent(**data)
@@ -139,9 +143,20 @@ class ReceiveWeblog(MethodView):
         # print("###########################")
 
         if event_type == "BATCH_JOB_EVENT":
+            taskArn = data['detail']['jobId']
+
+            # lookup workflow arn to validate
+            try:
+                t = db.session.query(TaskExecution)\
+                    .filter(TaskExecution.taskArn==taskArn).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                abort(404)
+
+            # Validate API_KEY
+            if not validate_api_key(t.fargateTaskArn, query_args['key']):
+                return "Invalid API Key", 403
 
             # save event with taskArn
-            taskArn = data['detail']['jobId']
             e = EcsEvent(
                 taskArn=taskArn,
                 data=data
@@ -149,12 +164,6 @@ class ReceiveWeblog(MethodView):
             db.session.add(e)
             
             # save task details to mutable TaskExecution record
-            try:
-                t = db.session.query(TaskExecution)\
-                    .filter(TaskExecution.taskArn==taskArn).one()
-            except sqlalchemy.orm.exc.NoResultFound:
-                abort(404)
-
             containerData = data['detail']['container']
             
             # update logStreamName if present
@@ -172,6 +181,11 @@ class ReceiveWeblog(MethodView):
 
         elif event_type == 'FARGATE_EVENT':
             fargateTaskArn = data['detail']['taskArn'].split(":task/")[1]
+            
+            # Validate API_KEY
+            if not validate_api_key(fargateTaskArn, query_args['key']):
+                return "Invalid API Key", 403
+
             e = EcsEvent(
                 fargateTaskArn=fargateTaskArn,
                 data=data

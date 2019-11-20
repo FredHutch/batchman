@@ -24,16 +24,31 @@ class Config(object):
     EXTERNAL_API_PREFIX = '/api/external'
     
     # configure api
-    API_KEY = os.environ.get('API_KEY') or get_api_key()
     API_ENDPOINT = "http://batchman.labmed.internal"
 
-    # ECS/Batch configuration
-    ECS_CLUSTER = 'AWSBatchComputeEnvironm-23ed74f37771bd0_Batch_e03e3939-7a56-3ee8-8394-1f95f5cb3b10'
-    ECS_SUBNETS = ["subnet-089bdabca179ab23f"]
     NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:3'
-    NEXTFLOW_S3_TEMP = 'uwlm-personal'
-    NEXTFLOW_S3_SESSION_CACHE = 'uwlm-personal/nf_session_data'
 
+    # SAML group <> resource mapping; keys correspond to ELMIRA groups.
+    GROUPS = {
+        "u_labmed_sec_bioinformatics": {
+            DISPLAY_NAME = "genetics"
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-23ed74f37771bd0_Batch_e03e3939-7a56-3ee8-8394-1f95f5cb3b10'
+            ECS_SUBNETS = ["subnet-089bdabca179ab23f"]
+            NEXTFLOW_S3_TEMP = 'uwlm-personal'
+            NEXTFLOW_S3_SESSION_CACHE = 'uwlm-personal/nf_session_data'
+            API_KEY = os.environ.get('API_KEY') or get_api_key()
+            IAM_TASK_ROLE_ARN = "arn:aws:iam::721970950229:role/nextflow-fargate-runner-role"
+        },
+        "u_labmed_sec_molmicro": {
+            DISPLAY_NAME = "molmicro"
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-23ed74f37771bd0_Batch_e03e3939-7a56-3ee8-8394-1f95f5cb3b10'
+            ECS_SUBNETS = ["subnet-089bdabca179ab23f"]
+            NEXTFLOW_S3_TEMP = 'uwlm-personal'
+            NEXTFLOW_S3_SESSION_CACHE = 'uwlm-personal/nf_session_data'
+            API_KEY = os.environ.get('API_KEY') or get_api_key()
+            IAM_TASK_ROLE_ARN = "arn:aws:iam::721970950229:role/nextflow-fargate-runner-role"
+        }
+    }
 
 class ProductionConfig(Config):
     AUTH_METHOD = 'SAML'

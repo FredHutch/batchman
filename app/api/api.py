@@ -35,6 +35,7 @@ class CreateWorkflowArgs(Schema):
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
+    group = fields.String(location="json", required=True)
 
 class ListWorkflowArgs(Schema):
     status = fields.String(location="query")
@@ -50,10 +51,10 @@ class WorkflowList(MethodView):
     def _generate_key(self):
         return str(uuid.uuid4())
 
-    def _upload_to_s3(self, s3_key, contents):
+    def _upload_to_s3(self, bucket, s3_key, contents):
         res = s3_client.put_object(
             Body=contents,
-            Bucket=current_app.config["NEXTFLOW_S3_TEMP"],
+            Bucket=bucket,
             Key=s3_key
         )
 
@@ -69,6 +70,7 @@ class WorkflowList(MethodView):
             w."nextflowMetadata"->'workflow'->'manifest' as manifest,
             w."cacheTaskArn", 
             w."username",
+            w."group",
             task_counts."submitted_task_count",
             task_counts."running_task_count",
             task_counts."completed_task_count"
@@ -109,6 +111,14 @@ class WorkflowList(MethodView):
     @WorkflowApi.response(WorkflowExecutionSchema, code=201)
     def post(self, args):
         """Submit new workflow for execution"""
+        # 0. define execution environment variables
+        if ("group" not in args) or (args["group"] not in current_app.config["GROUPS"]):
+            return "Must specify a valid `group` in POST", 500
+        else:
+            # TODO: validate user <> group relationship
+            GROUP = args["group"]
+            env = current_app.config["GROUPS"][GROUP]
+
         # 1. If a workflow and config file was uploaded
         print(args)
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
@@ -116,8 +126,8 @@ class WorkflowList(MethodView):
             workflow_key = "nextflow_scripts/%s/%s/main.nf" % (uuid_key[0:2], uuid_key)
             config_key = "nextflow_scripts/%s/%s/nextflow.config" % (uuid_key[0:2], uuid_key)
             try:
-                self._upload_to_s3(workflow_key, args["nextflow_workflow"])
-                self._upload_to_s3(config_key, args["nextflow_config"])
+                self._upload_to_s3(env["NEXTFLOW_S3_TEMP"], workflow_key, args["nextflow_workflow"])
+                self._upload_to_s3(env["NEXTFLOW_S3_TEMP"], config_key, args["nextflow_config"])
             except botocore.exceptions.ClientError:
                 return jsonify({"error": "unable to save scripts"}), 500
         # elif
@@ -131,18 +141,20 @@ class WorkflowList(MethodView):
         nextflow_options = ["-with-trace"]
         if args.get("resume_fargate_task_arn", "") != "":
             # resume from prior nextflow execution
+            # TODO: ensure this arn was run as part of current group
             resume_fargate_task_arn = args["resume_fargate_task_arn"]
             nextflow_options.append("-resume")
         else:
             resume_fargate_task_arn = ""
 
-        workflow_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], workflow_key)
-        config_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], config_key)
-        nf_session_loc = "s3://" + current_app.config["NEXTFLOW_S3_SESSION_CACHE"]
+        workflow_s3_loc = "s3://%s/%s" % (env["NEXTFLOW_S3_TEMP"], workflow_key)
+        config_s3_loc = "s3://%s/%s" % (env["NEXTFLOW_S3_TEMP"], config_key)
+        nf_session_loc = "s3://" + env["NEXTFLOW_S3_SESSION_CACHE"]
         try:
             res = ecs_client.run_task(
-                cluster=current_app.config["ECS_CLUSTER"],
+                cluster=env["ECS_CLUSTER"],
                 taskDefinition=current_app.config["NEXTFLOW_TASK_DEFINITION"],
+                taskRoleArn=env["IAM_TASK_ROLE_ARN"],
                 overrides={
                     "containerOverrides": [
                         {
@@ -155,7 +167,7 @@ class WorkflowList(MethodView):
                                 },
                                 {
                                     "name": "API_KEY",
-                                    "value": current_app.config["API_KEY"]
+                                    "value": env["API_KEY"]
                                 },
                                 {
                                     "name": "NEXTFLOW_OPTIONS",
@@ -176,7 +188,7 @@ class WorkflowList(MethodView):
                 launchType="FARGATE",
                 networkConfiguration={
                     "awsvpcConfiguration": {
-                        "subnets": current_app.config["ECS_SUBNETS"],
+                        "subnets": env["ECS_SUBNETS"],
                         "assignPublicIp": "ENABLED"
                     },
                 },
@@ -197,7 +209,8 @@ class WorkflowList(MethodView):
             fargateLogGroupName='/ecs/nextflow-runner',
             fargateLogStreamName='ecs/nextflow/%s' % taskArn,
             cacheTaskArn=resume_fargate_task_arn,
-            username=get_jwt_identity()
+            username=get_jwt_identity(),
+            group=GROUP,
         )
         db.session.add(e)
         db.session.commit()

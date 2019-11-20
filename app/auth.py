@@ -30,3 +30,14 @@ def get_jwt_identity():
 def get_jwt_groups():
     return get_jwt_claims()["profile"]
 
+def validate_api_key(fargateTaskArn, api_key):
+    try:
+        t = db.session.query(TaskExecution)\
+            .filter(TaskExecution.taskArn==taskArn).one()
+    except sqlalchemy.orm.exc.NoResultFound:
+        abort(404)
+
+    if t.group == get_group_by_key(api_key):
+        return true
+    else:
+        return false
