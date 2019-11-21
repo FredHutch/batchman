@@ -5,8 +5,7 @@ from flask_rest_api import Blueprint, abort
 from marshmallow import Schema, INCLUDE, fields
 
 from app.models import WeblogEvent
-from app.common import require_apikey
-from app.auth import validate_api_key
+from app.auth import require_logging_apikey
 from app import db
 
 from app.models import WorkflowExecution, TaskExecution, EcsEvent, WeblogEvent
@@ -37,16 +36,14 @@ class ReceiveWeblog(MethodView):
     @ExternalApi.arguments(NextflowWeblogSchema)
     @ExternalApi.arguments(WeblogArgs, location='query')
     @ExternalApi.response(code=201)
-    @require_apikey
+    @require_logging_apikey
     def post(self, data, query_args):
         """
         Receives web log messages from nextflow.
         Requires key=API_KEY and taskArn=UUID (corresponding to 
         nextflow-runner taskArn) in query args."""
         fargateTaskArn = query_args["taskArn"]
-        # Validate API_KEY
-        if not validate_api_key(fargateTaskArn, query_args['key']):
-            return "Invalid API Key", 403
+
         # First, save event in WeblogEvent table
         data["fargateTaskArn"] = fargateTaskArn
         e = WeblogEvent(**data)
@@ -131,7 +128,7 @@ class ReceiveWeblog(MethodView):
     @ExternalApi.arguments(EcsLogSchema)
     @ExternalApi.arguments(ApiKeyArgs, location='query')
     @ExternalApi.response(code=201)
-    @require_apikey
+    @require_logging_apikey
     def post(self, data, query_args):
         """
         Receives web log messages from AWS Lambdas triggered by ECS events.
@@ -145,17 +142,6 @@ class ReceiveWeblog(MethodView):
         if event_type == "BATCH_JOB_EVENT":
             taskArn = data['detail']['jobId']
 
-            # lookup workflow arn to validate
-            try:
-                t = db.session.query(TaskExecution)\
-                    .filter(TaskExecution.taskArn==taskArn).one()
-            except sqlalchemy.orm.exc.NoResultFound:
-                abort(404)
-
-            # Validate API_KEY
-            if not validate_api_key(t.fargateTaskArn, query_args['key']):
-                return "Invalid API Key", 403
-
             # save event with taskArn
             e = EcsEvent(
                 taskArn=taskArn,
@@ -166,6 +152,12 @@ class ReceiveWeblog(MethodView):
             # save task details to mutable TaskExecution record
             containerData = data['detail']['container']
             
+            try:
+                t = db.session.query(TaskExecution)\
+                    .filter(TaskExecution.taskArn==taskArn).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                abort(404)
+
             # update logStreamName if present
             logStreamName = containerData.get("logStreamName")
             if logStreamName and (t.taskLogGroupName is None):
@@ -182,10 +174,6 @@ class ReceiveWeblog(MethodView):
         elif event_type == 'FARGATE_EVENT':
             fargateTaskArn = data['detail']['taskArn'].split(":task/")[1]
             
-            # Validate API_KEY
-            if not validate_api_key(fargateTaskArn, query_args['key']):
-                return "Invalid API Key", 403
-
             e = EcsEvent(
                 fargateTaskArn=fargateTaskArn,
                 data=data
