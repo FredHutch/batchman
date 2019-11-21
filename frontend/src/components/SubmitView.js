@@ -1,8 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { useLocalStorage, useFetch } from "../hooks.js";
 
 import { navigate } from "@reach/router"
 import * as queryString from 'query-string';
+
+import { ProfileContext } from "../App.js";
 
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
@@ -66,6 +68,8 @@ function SubmitView(props) {
 
     const [resultVal, setResultVal] = useState();
 
+    const profile = useContext(ProfileContext)
+
     const loadExample = () => {
         scriptEditorRef.current.editor.setValue(exampleScript,1)
         configEditorRef.current.editor.setValue(exampleConfig,1)
@@ -102,7 +106,8 @@ function SubmitView(props) {
         const payload = {
             nextflow_workflow: scriptValue,
             nextflow_config: configValue,
-            resume_fargate_task_arn: resumeSelection || ""
+            resume_fargate_task_arn: resumeSelection || "",
+            workgroup: profile.selectedWorkgroup.name
         }
         fetch("/api/v1/workflow", {
             method: "POST",
@@ -122,7 +127,7 @@ function SubmitView(props) {
     return (
         <Container fluid>
         <Row>
-        <Col><h2>{arn ? "Resubmit" : "Submit Workflow"}</h2></Col>
+        <Col><h2>{arn ? "Resubmit" : "Submit Workflow"} ({profile.selectedWorkgroup.display_name})</h2></Col>
         <Col style={{textAlign: "right"}}>
             <Button variant="outline-secondary" className="mr-3"
                 onClick={loadExample}

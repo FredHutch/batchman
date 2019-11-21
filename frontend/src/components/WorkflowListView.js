@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 
 import { format, formatRelative } from 'date-fns/fp'
 import { GoTag as TagIcon, GoSync } from 'react-icons/go';
@@ -11,6 +11,8 @@ import Tab from "react-bootstrap/Tab";
 
 import { navigate } from "@reach/router"
 import { useFetch } from "../hooks.js";
+
+import { ProfileContext } from "../App.js";
 
 import "bootstrap/dist/css/bootstrap.css";
 import "react-bootstrap-table-next/dist/react-bootstrap-table2.min.css";
@@ -87,7 +89,7 @@ function WorkflowListView(props) {
     document.title = "All Workflows"
     const [activeTabKey, setActiveTabKey ] = useState('username=me');
     const [data, isLoading, isError] = useFetch("/api/v1/workflow?" + activeTabKey);
-    
+    const profile = useContext(ProfileContext)
 
     if (isLoading) {
         return <div>Loading</div>
@@ -101,7 +103,7 @@ function WorkflowListView(props) {
             <br/>
             <Tabs activeKey={activeTabKey} onSelect={setActiveTabKey} id="workflow-list-tabs" transition={false} >
               <Tab eventKey="username=me" title="My Workflows" />
-              <Tab eventKey="" title="All" />
+              {profile.workgroups.map(w => <Tab eventKey={"workgroup=" + w.name} title={w.display_name} />)}
               <Tab eventKey="status=error" title="Errors" />
             </Tabs>
 
