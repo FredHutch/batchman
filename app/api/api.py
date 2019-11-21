@@ -35,7 +35,7 @@ class CreateWorkflowArgs(Schema):
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
-    group = fields.String(location="json", required=True)
+    workgroup = fields.String(location="json", required=True)
 
 class ListWorkflowArgs(Schema):
     status = fields.String(location="query")
@@ -70,7 +70,7 @@ class WorkflowList(MethodView):
             w."nextflowMetadata"->'workflow'->'manifest' as manifest,
             w."cacheTaskArn", 
             w."username",
-            w."group",
+            w."workgroup",
             task_counts."submitted_task_count",
             task_counts."running_task_count",
             task_counts."completed_task_count"
@@ -112,14 +112,14 @@ class WorkflowList(MethodView):
     def post(self, args):
         """Submit new workflow for execution"""
         # 0. define execution environment variables
-        if ("group" not in args) or (args["group"] not in current_app.config["GROUPS"]):
-            return "Must specify a valid `group` in POST", 500
+        if ("workgroup" not in args) or (args["workgroup"] not in current_app.config["GROUPS"]):
+            return "Must specify a valid `workgroup` in POST", 500
         else:
-            GROUP = args["group"]
-            if GROUP not in get_jwt_groups():
+            WORKGROUP = args["workgroup"]
+            if WORKGROUP not in get_jwt_groups():
                 return "User is not part of group", 401
             else:
-                env = current_app.config["GROUPS"][GROUP]
+                env = current_app.config["WORKGROUPS"][WORKGROUP]
 
         # 1. If a workflow and config file was uploaded
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
@@ -150,8 +150,8 @@ class WorkflowList(MethodView):
                     .filter(WorkflowExecution.fargateTaskArn==resume_fargate_task_arn).one()
             except sqlalchemy.orm.exc.NoResultFound:
                 abort(404)
-            if w.group != GROUP:
-                return "You can only resume from workflows in the same group", 401
+            if w.group != WORKGROUP:
+                return "You can only resume from workflows in the same workgroup", 401
         else:
             resume_fargate_task_arn = ""
 
@@ -222,7 +222,7 @@ class WorkflowList(MethodView):
             fargateLogStreamName='ecs/nextflow/%s' % taskArn,
             cacheTaskArn=resume_fargate_task_arn,
             username=get_jwt_identity(),
-            group=GROUP,
+            workgroup=WORKGROUP,
         )
         db.session.add(e)
         db.session.commit()
@@ -345,4 +345,5 @@ class WorkflowTaskLogs(MethodView):
             startFromHead=False
         )
         return res
+
 
