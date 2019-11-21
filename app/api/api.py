@@ -14,7 +14,7 @@ from app.models import (
 )
 from app import db
 
-from app.auth import get_jwt_identity
+from app.auth import get_jwt_identity, get_jwt_groups
 
 ecs_client = boto3.client('ecs', region_name='us-west-2')
 batch_client = boto3.client('batch', region_name='us-west-2')
@@ -115,12 +115,13 @@ class WorkflowList(MethodView):
         if ("group" not in args) or (args["group"] not in current_app.config["GROUPS"]):
             return "Must specify a valid `group` in POST", 500
         else:
-            # TODO: validate user <> group relationship
             GROUP = args["group"]
-            env = current_app.config["GROUPS"][GROUP]
+            if GROUP not in get_jwt_groups():
+                return "User is not part of group", 401
+            else:
+                env = current_app.config["GROUPS"][GROUP]
 
         # 1. If a workflow and config file was uploaded
-        print(args)
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
             uuid_key = self._generate_key()
             workflow_key = "nextflow_scripts/%s/%s/main.nf" % (uuid_key[0:2], uuid_key)
@@ -141,9 +142,16 @@ class WorkflowList(MethodView):
         nextflow_options = ["-with-trace"]
         if args.get("resume_fargate_task_arn", "") != "":
             # resume from prior nextflow execution
-            # TODO: ensure this arn was run as part of current group
-            resume_fargate_task_arn = args["resume_fargate_task_arn"]
             nextflow_options.append("-resume")
+            resume_fargate_task_arn = args["resume_fargate_task_arn"]
+            # ensure this arn was run as part of current group
+            try:
+                w = db.session.query(WorkflowExecution)\
+                    .filter(WorkflowExecution.fargateTaskArn==resume_fargate_task_arn).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                abort(404)
+            if w.group != GROUP:
+                return "You can only resume from workflows in the same group", 401
         else:
             resume_fargate_task_arn = ""
 
