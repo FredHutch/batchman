@@ -4,7 +4,6 @@ from flask_rest_api import Blueprint, abort
 from marshmallow import Schema, INCLUDE, fields
 
 from app.models import WeblogEvent
-from app.common import require_apikey
 from app import db
 
 AdminApi = Blueprint(
