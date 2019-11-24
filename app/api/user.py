@@ -15,12 +15,17 @@ UserApi = Blueprint(
 class Profile(MethodView):
     def get(self):
         defined_groups = current_app.config["WORKGROUPS"]
-        workgroups = map(lambda g: {
-            "display_name": defined_groups[g].get("DISPLAY_NAME", g), 
-            "name": g
-        }, get_jwt_groups())
-        return jsonify({
-            "username": get_jwt_identity(),
-            "workgroups": list(workgroups)
-        })
+        user_groups = get_jwt_groups()
+        intersection = list(set(defined_groups) & set(defined_groups))
+        if len(intersection) == 0:
+            return jsonify({})
+        else:
+            workgroups = map(lambda g: {
+                "display_name": defined_groups[g].get("DISPLAY_NAME", g), 
+                "name": g
+            }, intersection)
+            return jsonify({
+                "username": get_jwt_identity(),
+                "workgroups": list(workgroups)
+            })
 
