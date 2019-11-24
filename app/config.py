@@ -41,7 +41,7 @@ class Config(object):
         ),
         "u_labmed_sec_molmicro": dict(
             DISPLAY_NAME = "MolMicro",
-            ECS_CLUSTER = 'AWSBatchComputeEnvironm-23ed74f37771bd0_Batch_e03e3939-7a56-3ee8-8394-1f95f5cb3b10',
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-bb62b388c39651a_Batch_924b5383-73f2-3798-99fa-ef9fb13e23fd',
             ECS_SUBNETS = ["subnet-089bdabca179ab23f"],
             NEXTFLOW_S3_TEMP = 'uwlm-personal',
             NEXTFLOW_S3_SESSION_CACHE = 'uwlm-personal/nf_session_data',
