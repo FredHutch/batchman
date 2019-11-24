@@ -40,6 +40,7 @@ class CreateWorkflowArgs(Schema):
 class ListWorkflowArgs(Schema):
     status = fields.String(location="query")
     username = fields.String(location="query")
+    workgroup = fields.String(location="query")
 
 WorkflowApi = Blueprint(
     'WorkflowApi', __name__,
@@ -94,13 +95,16 @@ class WorkflowList(MethodView):
                 where_args["username"] = get_jwt_identity()
             else:
                 where_args["username"] = args["username"]
+        if "workgroup" in args:
+            where_statements += ['w."workgroup" = :workgroup']
+            where_args["workgroup"] = args["workgroup"]
         if "status" in args:
             where_statements += ['w."nextflowLastEvent" = :status']
             where_args["status"] = args["status"]
 
         if len(where_statements) > 0:
             sql += ["WHERE"]
-            sql.extend(where_statements)
+            sql.extend([" AND ".join(where_statements)])
         sql += ['ORDER BY w."fargateCreatedAt" DESC;']
         print (where_args)
         res = db.session.execute("\n".join(sql), where_args)
