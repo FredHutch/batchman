@@ -113,11 +113,11 @@ class WorkflowList(MethodView):
         """Submit new workflow for execution"""
         # 0. define execution environment variables
         if ("workgroup" not in args) or (args["workgroup"] not in current_app.config["WORKGROUPS"]):
-            return "Must specify a valid `workgroup` in POST", 500
+            return jsonify({"error": "Must specify a valid `workgroup` in POST"}), 500
         else:
             WORKGROUP = args["workgroup"]
             if WORKGROUP not in get_jwt_groups():
-                return "User is not part of group", 401
+                return jsonify({"error": "User is not part of group"}), 401
             else:
                 env = current_app.config["WORKGROUPS"][WORKGROUP]
 
@@ -137,7 +137,7 @@ class WorkflowList(MethodView):
         # -- URL link; probably download and upload to s3 as above
         else:
             print(args)
-            return "Invalid nextflow commands", 500
+            return jsonify({"error": "Invalid nextflow commands"}), 500
         
         nextflow_options = ["-with-trace"]
         if args.get("resume_fargate_task_arn", "") != "":
@@ -151,7 +151,7 @@ class WorkflowList(MethodView):
             except sqlalchemy.orm.exc.NoResultFound:
                 abort(404)
             if w.group != WORKGROUP:
-                return "You can only resume from workflows in the same workgroup", 401
+                return jsonify({"error": "You can only resume from workflows in the same workgroup"}), 401
         else:
             resume_fargate_task_arn = ""
 
