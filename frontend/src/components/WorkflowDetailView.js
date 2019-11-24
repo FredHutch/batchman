@@ -232,8 +232,11 @@ function WorkflowDetailView({ runArn }) {
                     </Col>
                 </Row>
                 <Row>
-                    <Col>
+                    <Col md="4">
                         <LabeledValue label="Username" value={runData.username || NA_STRING} />
+                    </Col>
+                    <Col>
+                        <LabeledValue label="Workgroup" value={runData.workgroup || NA_STRING} />
                     </Col>
                 </Row>
                 <Row>

@@ -39,6 +39,12 @@ const columns = [
             ...sortSettings
         },
         {
+            dataField: "workgroup",
+            text: "Workgroup",
+            headerStyle: { width: "10%" },
+            ...sortSettings
+        },
+        {
             text: "Workflow Name",
             headerStyle: { width: "30%" },
             formatter: (cell, {manifest}) => {
@@ -74,14 +80,9 @@ const columns = [
         },
         {
             dataField: "taskCounts",
-            text: <span>Task Counts <br/>(Submitted/Running/Completed)</span>,
+            text: <span>Task Counts</span>,
             formatter: taskCountDisplay,
-            headerStyle: { width: "35%" }
-        },
-        {
-            dataField: "miniToolbar",
-            text: "Actions",
-            headerStyle: { width: "20%" }
+            headerStyle: { width: "15%" }
         }
     ];
 
