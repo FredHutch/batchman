@@ -162,8 +162,8 @@ class WorkflowList(MethodView):
             res = ecs_client.run_task(
                 cluster=env["ECS_CLUSTER"],
                 taskDefinition=current_app.config["NEXTFLOW_TASK_DEFINITION"],
-                taskRoleArn=env["IAM_TASK_ROLE_ARN"],
                 overrides={
+                    "taskRoleArn": env["IAM_TASK_ROLE_ARN"],
                     "containerOverrides": [
                         {
                             "name": "nextflow",
