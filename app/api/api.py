@@ -112,7 +112,7 @@ class WorkflowList(MethodView):
     def post(self, args):
         """Submit new workflow for execution"""
         # 0. define execution environment variables
-        if ("workgroup" not in args) or (args["workgroup"] not in current_app.config["GROUPS"]):
+        if ("workgroup" not in args) or (args["workgroup"] not in current_app.config["WORKGROUPS"]):
             return "Must specify a valid `workgroup` in POST", 500
         else:
             WORKGROUP = args["workgroup"]
