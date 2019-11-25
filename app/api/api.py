@@ -154,7 +154,7 @@ class WorkflowList(MethodView):
                     .filter(WorkflowExecution.fargateTaskArn==resume_fargate_task_arn).one()
             except sqlalchemy.orm.exc.NoResultFound:
                 abort(404)
-            if w.group != WORKGROUP:
+            if w.workgroup != WORKGROUP:
                 return jsonify({"error": "You can only resume from workflows in the same workgroup"}), 401
         else:
             resume_fargate_task_arn = ""
