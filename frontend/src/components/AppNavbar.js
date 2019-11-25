@@ -11,6 +11,7 @@ import { ProfileContext } from "../App.js";
 
 function AppNavbar(props) {
 	const profile = useContext(ProfileContext)
+	const userCanSubmit = profile.workgroups.length > 0;
     return (
 		<Navbar id='navbar' bg="info" variant="dark" fixed="top">
 		  <Navbar.Brand as={Link} to="/">Batchman</Navbar.Brand>
@@ -18,16 +19,19 @@ function AppNavbar(props) {
 		  <Navbar.Collapse>
 	    	<Nav className="mr-auto">
 	      	<Nav.Link as={Link} to="/workflow">Workflows</Nav.Link>
-	      	<Nav.Link as={Link} to="/submit">Submit</Nav.Link>
+	      	{userCanSubmit && ( <Nav.Link as={Link} to="/submit">Submit</Nav.Link>)}
 	      	</Nav>
 	      	<Nav pullRight>
-	      	<NavDropdown className='mr-sm-2'
-	      		title={<span className='font-weight-bold' style={{color: "white"}}>{"Workgroup: " + profile.selectedWorkgroup.display_name}</span>}
-	      		onSelect={(key) => profile.setWorkgroup(key)}
-	      		id="workgroup-nav-dropdown">
-		        {profile.workgroups.map(w => (<NavDropdown.Item eventKey={w.name}>{w.display_name}</NavDropdown.Item>))}
-		    </NavDropdown>
-	    	</Nav>
+	      	{userCanSubmit 
+	      	  ? <NavDropdown className='mr-sm-2'
+		      		title={<span className='font-weight-bold' style={{color: "white"}}>{"Workgroup: " + profile.selectedWorkgroup.display_name}</span>}
+		      		onSelect={(key) => profile.setWorkgroup(key)}
+		      		id="workgroup-nav-dropdown">
+			        {profile.workgroups.map(w => (<NavDropdown.Item eventKey={w.name}>{w.display_name}</NavDropdown.Item>))}
+			    </NavDropdown>
+		      : <span className='font-weight-bold' style={{color: "white"}}>Read only access</span>
+		    }
+		    </Nav>
 		  </Navbar.Collapse>
 		</Navbar>
     );
