@@ -135,9 +135,9 @@ class ReceiveWeblog(MethodView):
         Requires key=API_KEY in query args.
         """
         event_type = self.parse_event_type(data)
-        # print("### received %s ###" % event_type)
-        # pp.pprint(data)
-        # print("###########################")
+        print("### received %s ###" % event_type)
+        pp.pprint(data)
+        print("###########################")
 
         if event_type == "BATCH_JOB_EVENT":
             taskArn = data['detail']['jobId']
