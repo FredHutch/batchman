@@ -87,8 +87,8 @@ class WorkflowList(MethodView):
         ) as task_counts
             ON task_counts."fargateTaskArn" = w."fargateTaskArn"
         """]
-        where_statements = []
-        where_args = {}
+        where_statements = ['w."workgroup" = any(:workgroup_list)']
+        where_args = {"workgroup_list": get_jwt_groups()}
         if "username" in args:
             where_statements += ['w."username" = :username']
             if args["username"] == "me":
@@ -106,7 +106,6 @@ class WorkflowList(MethodView):
             sql += ["WHERE"]
             sql.extend([" AND ".join(where_statements)])
         sql += ['ORDER BY w."fargateCreatedAt" DESC;']
-        print (where_args)
         res = db.session.execute("\n".join(sql), where_args)
         res = [dict(row) for row in res]
         return jsonify(res)
