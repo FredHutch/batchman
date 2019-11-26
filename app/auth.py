@@ -2,9 +2,13 @@ import re
 import os
 import base64
 import json
-from functools import wraps
-from flask import request, current_app, abort
+import sqlalchemy
 
+from functools import wraps
+from flask import request, current_app, abort, jsonify, make_response
+
+from app import db
+from app.models import WorkflowExecution
 def get_jwt_claims():
     if current_app.config["AUTH_METHOD"] == "MOCK":
         return {
@@ -52,3 +56,22 @@ def require_logging_apikey(view_function):
         else:
             abort(401)
     return decorated_function
+
+def validate_workgroup(arn_field_name='id'):
+    def _validate_workgroup(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            groups = get_jwt_groups()
+            arn = kwargs[arn_field_name]
+            print(groups,arn)
+            try:
+                res = db.session.query(WorkflowExecution)\
+                    .filter(WorkflowExecution.fargateTaskArn==arn)\
+                    .filter(WorkflowExecution.workgroup.in_(groups))\
+                    .one()
+                return fn(*args, **kwargs)
+            except sqlalchemy.orm.exc.NoResultFound:
+                abort(make_response(jsonify(msg="Not authorized"), 403))
+        return wrapper
+
+    return _validate_workgroup

@@ -14,7 +14,7 @@ from app.models import (
 )
 from app import db
 
-from app.auth import get_jwt_identity, get_jwt_groups
+from app.auth import get_jwt_identity, get_jwt_groups, validate_workgroup
 
 ecs_client = boto3.client('ecs', region_name='us-west-2')
 batch_client = boto3.client('batch', region_name='us-west-2')
@@ -235,14 +235,18 @@ class WorkflowList(MethodView):
 @WorkflowApi.route('/workflow/<string:id>')
 class Workflow(MethodView):
     @WorkflowApi.response(WorkflowExecutionSchema)
-    def get(self, id ):
+    @validate_workgroup()
+    def get(self, id):
         """Get information on workflow by workflow id"""
         try:
             return db.session.query(WorkflowExecution)\
-                .filter(WorkflowExecution.fargateTaskArn==id).one()
+                .filter(WorkflowExecution.fargateTaskArn==id)\
+                .filter(WorkflowExecution.workgroup.in_(get_jwt_groups()))\
+                .one()
         except sqlalchemy.orm.exc.NoResultFound:
             abort(404)
 
+    @validate_workgroup()
     def delete(self, id):
         """Stop workflow by workflow id"""
         try:
@@ -258,11 +262,14 @@ class Workflow(MethodView):
 
 @WorkflowApi.route('/workflow/<string:id>/logs')
 class WorkflowLogs(MethodView):
+    @validate_workgroup()
     def get(self, id ):
         """Get top level workflow logs"""
         try:
             db_res = db.session.query(WorkflowExecution)\
-                .filter(WorkflowExecution.fargateTaskArn==id).one()
+                .filter(WorkflowExecution.fargateTaskArn==id)\
+                .filter(WorkflowExecution.workgroup.in_(get_jwt_groups()))\
+                .one()
         except sqlalchemy.orm.exc.NoResultFound:
             abort(404)
 
@@ -275,6 +282,7 @@ class WorkflowLogs(MethodView):
 
 @WorkflowApi.route('/workflow/<string:id>/status')
 class WorkflowStatus(MethodView):
+    @validate_workgroup()
     def get(self, id):
         """Get latest workflow status"""
         abort(500)
@@ -293,6 +301,7 @@ class WorkflowStatus(MethodView):
 @WorkflowApi.route('/workflow/<string:id>/tasks')
 class WorkflowTasks(MethodView):
     @WorkflowApi.response(TaskExecutionSchema(many=True))
+    @validate_workgroup()
     def get(self, id):
         """Get tasks for workflow"""
         return db.session.query(TaskExecution)\
@@ -303,6 +312,7 @@ class WorkflowTasks(MethodView):
 @WorkflowApi.route('/workflow/<string:id>/script')
 @WorkflowApi.route('/workflow/<string:id>/config')
 class WorkflowScriptFile(MethodView):
+    @validate_workgroup()
     def get(self, id):
         """Get nextflow script for workflow"""
         FILE = request.path.split("/")[-1]
@@ -325,6 +335,7 @@ class WorkflowScriptFile(MethodView):
 @WorkflowApi.route('/workflow/<string:run_id>/tasks/<string:task_id>')
 class WorkflowTaskStatus(MethodView):
     @WorkflowApi.response(TaskExecutionSchema)
+    @validate_workgroup(arn_field_name='run_id')
     def get(self, run_id, task_id):
         """Get all status updates for specific task of workflow"""
         return db.session.query(TaskExecution)\
@@ -335,6 +346,7 @@ class WorkflowTaskStatus(MethodView):
 
 @WorkflowApi.route('/workflow/<string:run_id>/tasks/<string:task_id>/logs')
 class WorkflowTaskLogs(MethodView):
+    @validate_workgroup(arn_field_name='run_id')
     def get(self, run_id, task_id):
         """Get logs for specific task"""
         db_res = db.session.query(TaskExecution)\
