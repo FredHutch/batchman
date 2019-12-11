@@ -23,6 +23,5 @@ class ApiKey(MethodView):
 
         workgroups = {g: current_app.config["WORKGROUPS"][g]["API_KEY"] for g in intersection}
         return jsonify({
-            "LOGGING_API_KEY": current_app.config["LOGGING_API_KEY"],
             "WORKGROUP_API_KEY": workgroups
         })

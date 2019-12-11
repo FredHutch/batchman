@@ -43,11 +43,10 @@ def create_app():
     ## API setup
     apis = flask_rest_api.Api(app)
     
-    from app.api import api, external, admin, user
+    from app.api import api, admin, user, logging
     apis.register_blueprint(api.WorkflowApi, url_prefix=app.config["API_PREFIX"])
     apis.register_blueprint(admin.AdminApi, url_prefix=app.config["API_PREFIX"])
     apis.register_blueprint(user.UserApi, url_prefix=app.config["API_PREFIX"])
-    # Note: this route is NOT TO BE PROTECTED at the ALB level as it enforces an API_KEY for each route
-    apis.register_blueprint(external.ExternalApi, url_prefix=app.config["EXTERNAL_API_PREFIX"])
+    apis.register_blueprint(logging.LoggingApi, url_prefix=app.config["API_PREFIX"])
 
     return app

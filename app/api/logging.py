@@ -5,14 +5,13 @@ from flask_rest_api import Blueprint, abort
 from marshmallow import Schema, INCLUDE, fields
 
 from app.models import WeblogEvent
-from app.auth import require_logging_apikey
 from app import db
 
 from app.models import WorkflowExecution, TaskExecution, EcsEvent, WeblogEvent
 
-ExternalApi = Blueprint(
-    'ExternalApi', __name__,
-    description='Endpoints for nextflow weblogging, ecs logging and other externally facing endponts.'
+LoggingApi = Blueprint(
+    'LoggingApi', __name__,
+    description='Endpoints for nextflow weblogging, ecs, and batch logging.'
 )
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -28,20 +27,18 @@ class NextflowWeblogSchema(Schema):
     trace = fields.Mapping()
 
 class WeblogArgs(Schema):
-    key = fields.String()
     taskArn = fields.String()
 
-@ExternalApi.route('/weblog')
+@LoggingApi.route('/weblog')
 class ReceiveWeblog(MethodView):
-    @ExternalApi.arguments(NextflowWeblogSchema)
-    @ExternalApi.arguments(WeblogArgs, location='query')
-    @ExternalApi.response(code=201)
-    @require_logging_apikey
+    @LoggingApi.arguments(NextflowWeblogSchema)
+    @LoggingApi.arguments(WeblogArgs, location='query')
+    @LoggingApi.response(code=201)
     def post(self, data, query_args):
         """
         Receives web log messages from nextflow.
-        Requires key=API_KEY and taskArn=UUID (corresponding to 
-        nextflow-runner taskArn) in query args."""
+        Requires taskArn=UUID (corresponding to nextflow-runner taskArn) in query args.
+        """
         fargateTaskArn = query_args["taskArn"]
 
         # First, save event in WeblogEvent table
@@ -105,9 +102,6 @@ class ReceiveWeblog(MethodView):
         return None
 
 
-class ApiKeyArgs(Schema):
-    key = fields.String()
-
 class EcsLogSchema(Schema):
     detail_type = fields.String()
     account = fields.String()
@@ -115,7 +109,7 @@ class EcsLogSchema(Schema):
     resources = fields.List(fields.String())
     detail = fields.Mapping()
 
-@ExternalApi.route('/ecslog')
+@LoggingApi.route('/ecslog')
 class ReceiveWeblog(MethodView):
     def parse_event_type(self, data):
         if "detail" in data:
@@ -125,14 +119,11 @@ class ReceiveWeblog(MethodView):
                 return "FARGATE_EVENT"
         return None
 
-    @ExternalApi.arguments(EcsLogSchema)
-    @ExternalApi.arguments(ApiKeyArgs, location='query')
-    @ExternalApi.response(code=201)
-    @require_logging_apikey
-    def post(self, data, query_args):
+    @LoggingApi.arguments(EcsLogSchema)
+    @LoggingApi.response(code=201)
+    def post(self, data):
         """
         Receives web log messages from AWS Lambdas triggered by ECS events.
-        Requires key=API_KEY in query args.
         """
         event_type = self.parse_event_type(data)
         # print("### received %s ###" % event_type)

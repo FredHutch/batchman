@@ -181,10 +181,6 @@ class WorkflowList(MethodView):
                                     "value": env["API_KEY"]
                                 },
                                 {
-                                    "name": "LOGGING_API_KEY",
-                                    "value": current_app.config["LOGGING_API_KEY"]
-                                },
-                                {
                                     "name": "NEXTFLOW_OPTIONS",
                                     "value": " ".join(nextflow_options)
                                 },

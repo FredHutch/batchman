@@ -21,11 +21,9 @@ class Config(object):
     )
     OPENAPI_VERSION = '3.0.2'
     API_PREFIX = '/api/v1'
-    EXTERNAL_API_PREFIX = '/api/external'
     
     # configure api
     API_ENDPOINT = "http://batchman.labmed.internal"
-    LOGGING_API_KEY = os.environ.get('API_KEY') or get_api_key()
     NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:4'
 
     # SAML group <> resource mapping; keys correspond to ELMIRA groups.
