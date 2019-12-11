@@ -52,11 +52,12 @@ class WorkflowList(MethodView):
     def _generate_key(self):
         return str(uuid.uuid4())
 
-    def _upload_to_s3(self, bucket, s3_key, contents):
+    def _upload_to_s3(self, s3_url, contents):
+        p = urllib.parse.urlparse(s3_url)
         res = s3_client.put_object(
             Body=contents,
-            Bucket=bucket,
-            Key=s3_key
+            Bucket=p.netloc,
+            Key=p.path[1:]
         )
 
     @WorkflowApi.arguments(ListWorkflowArgs)
@@ -127,11 +128,11 @@ class WorkflowList(MethodView):
         # 1. If a workflow and config file was uploaded
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
             uuid_key = self._generate_key()
-            workflow_key = "nextflow_scripts/%s/%s/main.nf" % (uuid_key[0:2], uuid_key)
-            config_key = "nextflow_scripts/%s/%s/nextflow.config" % (uuid_key[0:2], uuid_key)
+            workflow_loc =  "%s/%s/%s/main.nf" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
+            config_loc = "%s/%s/%s/nextflow.config" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
             try:
-                self._upload_to_s3(env["NEXTFLOW_S3_TEMP"], workflow_key, args["nextflow_workflow"])
-                self._upload_to_s3(env["NEXTFLOW_S3_TEMP"], config_key, args["nextflow_config"])
+                self._upload_to_s3(workflow_loc, args["nextflow_workflow"])
+                self._upload_to_s3(config_loc, args["nextflow_config"])
             except botocore.exceptions.ClientError:
                 return jsonify({"error": "unable to save scripts"}), 500
         # elif
@@ -158,9 +159,6 @@ class WorkflowList(MethodView):
         else:
             resume_fargate_task_arn = ""
 
-        workflow_s3_loc = "s3://%s/%s" % (env["NEXTFLOW_S3_TEMP"], workflow_key)
-        config_s3_loc = "s3://%s/%s" % (env["NEXTFLOW_S3_TEMP"], config_key)
-        nf_session_loc = "s3://" + env["NEXTFLOW_S3_SESSION_CACHE"]
         try:
             res = ecs_client.run_task(
                 cluster=env["ECS_CLUSTER"],
@@ -170,7 +168,7 @@ class WorkflowList(MethodView):
                     "containerOverrides": [
                         {
                             "name": "nextflow",
-                            "command": ["runner.sh", workflow_s3_loc, config_s3_loc],
+                            "command": ["runner.sh", workflow_loc, config_loc],
                             "environment": [
                                 {
                                     "name": "API_ENDPOINT",
@@ -186,7 +184,7 @@ class WorkflowList(MethodView):
                                 },
                                 {
                                     "name": "NF_SESSION_CACHE_DIR",
-                                    "value": nf_session_loc
+                                    "value": env["NEXTFLOW_S3_SESSION_CACHE"]
                                 },
                                 {
                                     "name": "NF_SESSION_CACHE_ARN",

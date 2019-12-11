@@ -24,16 +24,16 @@ class Config(object):
     
     # configure api
     API_ENDPOINT = "http://batchman.labmed.internal"
-    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:4'
+    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:5'
 
     # SAML group <> resource mapping; keys correspond to ELMIRA groups.
     WORKGROUPS = {
         "u_labmed_dg_ngs-users": dict(
             DISPLAY_NAME = "NGS Analytics",
-            ECS_CLUSTER = 'AWSBatchComputeEnvironm-23ed74f37771bd0_Batch_e03e3939-7a56-3ee8-8394-1f95f5cb3b10',
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-613b057210b3874_Batch_92acf11e-70f5-3a41-bd7f-97ae3e945264',
             ECS_SUBNETS = ["subnet-089bdabca179ab23f"],
-            NEXTFLOW_S3_TEMP = 'uwlm-nextflow-data',
-            NEXTFLOW_S3_SESSION_CACHE = 'uwlm-nextflow-data/session_data',
+            NEXTFLOW_S3_SCRIPTS = 's3://uwlm-nextflow-data/scripts/ngs',
+            NEXTFLOW_S3_SESSION_CACHE = 's3://uwlm-nextflow-data/session_data/ngs',
             API_KEY = os.environ.get('API_KEY') or get_api_key(),
             IAM_TASK_ROLE_ARN = "arn:aws:iam::721970950229:role/nextflow-fargate-runner-role",
         ),
@@ -41,8 +41,8 @@ class Config(object):
             DISPLAY_NAME = "MolMicro",
             ECS_CLUSTER = 'AWSBatchComputeEnvironm-bb62b388c39651a_Batch_924b5383-73f2-3798-99fa-ef9fb13e23fd',
             ECS_SUBNETS = ["subnet-089bdabca179ab23f"],
-            NEXTFLOW_S3_TEMP = 'uwlm-nextflow-data',
-            NEXTFLOW_S3_SESSION_CACHE = 'uwlm-nextflow-data/session_data',
+            NEXTFLOW_S3_SCRIPTS = 's3://uwlm-nextflow-data/scripts/molmicro',
+            NEXTFLOW_S3_SESSION_CACHE = 's3://uwlm-nextflow-data/session_data/molmicro',
             API_KEY = os.environ.get('API_KEY') or get_api_key(),
             IAM_TASK_ROLE_ARN = "arn:aws:iam::721970950229:role/nextflow-fargate-runner-role",
         )
