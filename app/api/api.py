@@ -125,8 +125,9 @@ class WorkflowList(MethodView):
             else:
                 env = current_app.config["WORKGROUPS"][WORKGROUP]
 
-        # 1. If a workflow and config file was uploaded
+        
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
+            # 1a. If a workflow and config file was uploaded
             uuid_key = self._generate_key()
             workflow_loc =  "%s/%s/%s/main.nf" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
             config_loc = "%s/%s/%s/nextflow.config" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
@@ -135,10 +136,16 @@ class WorkflowList(MethodView):
                 self._upload_to_s3(config_loc, args["nextflow_config"])
             except botocore.exceptions.ClientError:
                 return jsonify({"error": "unable to save scripts"}), 500
-        # elif
-        # -- GIT link provided. Probably pass to nf directly? 
-        # elif
-        # -- URL link; probably download and upload to s3 as above
+            execution_type = "FILES"
+            command = ["runner.sh", workflow_loc, config_loc]
+        elif ("git_url" in args):
+            # 1b. Or, if a git url is provided
+            execution_type = "GIT_URL"
+            command = ["runner.sh", git_url]
+        elif ("s3_url" in args):
+            # 1c. Or, a s3 url
+            execution_type = "S3_URL"
+            command = ["runner.sh", s3_url]
         else:
             print(args)
             return jsonify({"error": "Invalid nextflow commands"}), 500
@@ -168,8 +175,12 @@ class WorkflowList(MethodView):
                     "containerOverrides": [
                         {
                             "name": "nextflow",
-                            "command": ["runner.sh", workflow_loc, config_loc],
+                            "command": command,
                             "environment": [
+                                {
+                                    "name": "EXECUTION_TYPE",
+                                    "value": execution_type
+                                },
                                 {
                                     "name": "API_ENDPOINT",
                                     "value": current_app.config["API_ENDPOINT"]
