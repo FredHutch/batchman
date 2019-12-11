@@ -14,7 +14,7 @@ from app.models import (
 )
 from app import db
 
-from app.auth import get_jwt_identity
+from app.auth import get_jwt_identity, get_jwt_groups, validate_workgroup
 
 ecs_client = boto3.client('ecs', region_name='us-west-2')
 batch_client = boto3.client('batch', region_name='us-west-2')
@@ -35,10 +35,12 @@ class CreateWorkflowArgs(Schema):
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
+    workgroup = fields.String(location="json", required=True)
 
 class ListWorkflowArgs(Schema):
     status = fields.String(location="query")
     username = fields.String(location="query")
+    workgroup = fields.String(location="query")
 
 WorkflowApi = Blueprint(
     'WorkflowApi', __name__,
@@ -50,11 +52,12 @@ class WorkflowList(MethodView):
     def _generate_key(self):
         return str(uuid.uuid4())
 
-    def _upload_to_s3(self, s3_key, contents):
+    def _upload_to_s3(self, s3_url, contents):
+        p = urllib.parse.urlparse(s3_url)
         res = s3_client.put_object(
             Body=contents,
-            Bucket=current_app.config["NEXTFLOW_S3_TEMP"],
-            Key=s3_key
+            Bucket=p.netloc,
+            Key=p.path[1:]
         )
 
     @WorkflowApi.arguments(ListWorkflowArgs)
@@ -69,6 +72,7 @@ class WorkflowList(MethodView):
             w."nextflowMetadata"->'workflow'->'manifest' as manifest,
             w."cacheTaskArn", 
             w."username",
+            w."workgroup",
             task_counts."submitted_task_count",
             task_counts."running_task_count",
             task_counts."completed_task_count"
@@ -84,23 +88,25 @@ class WorkflowList(MethodView):
         ) as task_counts
             ON task_counts."fargateTaskArn" = w."fargateTaskArn"
         """]
-        where_statements = []
-        where_args = {}
+        where_statements = ['w."workgroup" = any(:workgroup_list)']
+        where_args = {"workgroup_list": get_jwt_groups()}
         if "username" in args:
             where_statements += ['w."username" = :username']
             if args["username"] == "me":
                 where_args["username"] = get_jwt_identity()
             else:
                 where_args["username"] = args["username"]
+        if "workgroup" in args:
+            where_statements += ['w."workgroup" = :workgroup']
+            where_args["workgroup"] = args["workgroup"]
         if "status" in args:
             where_statements += ['w."nextflowLastEvent" = :status']
             where_args["status"] = args["status"]
 
         if len(where_statements) > 0:
             sql += ["WHERE"]
-            sql.extend(where_statements)
+            sql.extend([" AND ".join(where_statements)])
         sql += ['ORDER BY w."fargateCreatedAt" DESC;']
-        print (where_args)
         res = db.session.execute("\n".join(sql), where_args)
         res = [dict(row) for row in res]
         return jsonify(res)
@@ -109,15 +115,24 @@ class WorkflowList(MethodView):
     @WorkflowApi.response(WorkflowExecutionSchema, code=201)
     def post(self, args):
         """Submit new workflow for execution"""
+        # 0. define execution environment variables
+        if ("workgroup" not in args) or (args["workgroup"] not in current_app.config["WORKGROUPS"]):
+            return jsonify({"error": "Must specify a valid `workgroup` in POST"}), 500
+        else:
+            WORKGROUP = args["workgroup"]
+            if WORKGROUP not in get_jwt_groups():
+                return jsonify({"error": "User is not part of group"}), 401
+            else:
+                env = current_app.config["WORKGROUPS"][WORKGROUP]
+
         # 1. If a workflow and config file was uploaded
-        print(args)
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
             uuid_key = self._generate_key()
-            workflow_key = "nextflow_scripts/%s/%s/main.nf" % (uuid_key[0:2], uuid_key)
-            config_key = "nextflow_scripts/%s/%s/nextflow.config" % (uuid_key[0:2], uuid_key)
+            workflow_loc =  "%s/%s/%s/main.nf" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
+            config_loc = "%s/%s/%s/nextflow.config" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
             try:
-                self._upload_to_s3(workflow_key, args["nextflow_workflow"])
-                self._upload_to_s3(config_key, args["nextflow_config"])
+                self._upload_to_s3(workflow_loc, args["nextflow_workflow"])
+                self._upload_to_s3(config_loc, args["nextflow_config"])
             except botocore.exceptions.ClientError:
                 return jsonify({"error": "unable to save scripts"}), 500
         # elif
@@ -126,28 +141,34 @@ class WorkflowList(MethodView):
         # -- URL link; probably download and upload to s3 as above
         else:
             print(args)
-            return "Invalid nextflow commands", 500
+            return jsonify({"error": "Invalid nextflow commands"}), 500
         
         nextflow_options = ["-with-trace"]
         if args.get("resume_fargate_task_arn", "") != "":
             # resume from prior nextflow execution
-            resume_fargate_task_arn = args["resume_fargate_task_arn"]
             nextflow_options.append("-resume")
+            resume_fargate_task_arn = args["resume_fargate_task_arn"]
+            # ensure this arn was run as part of current group
+            try:
+                w = db.session.query(WorkflowExecution)\
+                    .filter(WorkflowExecution.fargateTaskArn==resume_fargate_task_arn).one()
+            except sqlalchemy.orm.exc.NoResultFound:
+                abort(404)
+            if w.workgroup != WORKGROUP:
+                return jsonify({"error": "You can only resume from workflows in the same workgroup"}), 401
         else:
             resume_fargate_task_arn = ""
 
-        workflow_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], workflow_key)
-        config_s3_loc = "s3://%s/%s" % (current_app.config["NEXTFLOW_S3_TEMP"], config_key)
-        nf_session_loc = "s3://" + current_app.config["NEXTFLOW_S3_SESSION_CACHE"]
         try:
             res = ecs_client.run_task(
-                cluster=current_app.config["ECS_CLUSTER"],
+                cluster=env["ECS_CLUSTER"],
                 taskDefinition=current_app.config["NEXTFLOW_TASK_DEFINITION"],
                 overrides={
+                    "taskRoleArn": env["IAM_TASK_ROLE_ARN"],
                     "containerOverrides": [
                         {
                             "name": "nextflow",
-                            "command": ["runner.sh", workflow_s3_loc, config_s3_loc],
+                            "command": ["runner.sh", workflow_loc, config_loc],
                             "environment": [
                                 {
                                     "name": "API_ENDPOINT",
@@ -155,7 +176,7 @@ class WorkflowList(MethodView):
                                 },
                                 {
                                     "name": "API_KEY",
-                                    "value": current_app.config["API_KEY"]
+                                    "value": env["API_KEY"]
                                 },
                                 {
                                     "name": "NEXTFLOW_OPTIONS",
@@ -163,7 +184,7 @@ class WorkflowList(MethodView):
                                 },
                                 {
                                     "name": "NF_SESSION_CACHE_DIR",
-                                    "value": nf_session_loc
+                                    "value": env["NEXTFLOW_S3_SESSION_CACHE"]
                                 },
                                 {
                                     "name": "NF_SESSION_CACHE_ARN",
@@ -176,7 +197,7 @@ class WorkflowList(MethodView):
                 launchType="FARGATE",
                 networkConfiguration={
                     "awsvpcConfiguration": {
-                        "subnets": current_app.config["ECS_SUBNETS"],
+                        "subnets": env["ECS_SUBNETS"],
                         "assignPublicIp": "ENABLED"
                     },
                 },
@@ -197,7 +218,8 @@ class WorkflowList(MethodView):
             fargateLogGroupName='/ecs/nextflow-runner',
             fargateLogStreamName='ecs/nextflow/%s' % taskArn,
             cacheTaskArn=resume_fargate_task_arn,
-            username=get_jwt_identity()
+            username=get_jwt_identity(),
+            workgroup=WORKGROUP,
         )
         db.session.add(e)
         db.session.commit()
@@ -207,14 +229,18 @@ class WorkflowList(MethodView):
 @WorkflowApi.route('/workflow/<string:id>')
 class Workflow(MethodView):
     @WorkflowApi.response(WorkflowExecutionSchema)
-    def get(self, id ):
+    @validate_workgroup()
+    def get(self, id):
         """Get information on workflow by workflow id"""
         try:
             return db.session.query(WorkflowExecution)\
-                .filter(WorkflowExecution.fargateTaskArn==id).one()
+                .filter(WorkflowExecution.fargateTaskArn==id)\
+                .filter(WorkflowExecution.workgroup.in_(get_jwt_groups()))\
+                .one()
         except sqlalchemy.orm.exc.NoResultFound:
             abort(404)
 
+    @validate_workgroup()
     def delete(self, id):
         """Stop workflow by workflow id"""
         try:
@@ -230,11 +256,14 @@ class Workflow(MethodView):
 
 @WorkflowApi.route('/workflow/<string:id>/logs')
 class WorkflowLogs(MethodView):
+    @validate_workgroup()
     def get(self, id ):
         """Get top level workflow logs"""
         try:
             db_res = db.session.query(WorkflowExecution)\
-                .filter(WorkflowExecution.fargateTaskArn==id).one()
+                .filter(WorkflowExecution.fargateTaskArn==id)\
+                .filter(WorkflowExecution.workgroup.in_(get_jwt_groups()))\
+                .one()
         except sqlalchemy.orm.exc.NoResultFound:
             abort(404)
 
@@ -247,6 +276,7 @@ class WorkflowLogs(MethodView):
 
 @WorkflowApi.route('/workflow/<string:id>/status')
 class WorkflowStatus(MethodView):
+    @validate_workgroup()
     def get(self, id):
         """Get latest workflow status"""
         abort(500)
@@ -265,6 +295,7 @@ class WorkflowStatus(MethodView):
 @WorkflowApi.route('/workflow/<string:id>/tasks')
 class WorkflowTasks(MethodView):
     @WorkflowApi.response(TaskExecutionSchema(many=True))
+    @validate_workgroup()
     def get(self, id):
         """Get tasks for workflow"""
         return db.session.query(TaskExecution)\
@@ -275,6 +306,7 @@ class WorkflowTasks(MethodView):
 @WorkflowApi.route('/workflow/<string:id>/script')
 @WorkflowApi.route('/workflow/<string:id>/config')
 class WorkflowScriptFile(MethodView):
+    @validate_workgroup()
     def get(self, id):
         """Get nextflow script for workflow"""
         FILE = request.path.split("/")[-1]
@@ -297,6 +329,7 @@ class WorkflowScriptFile(MethodView):
 @WorkflowApi.route('/workflow/<string:run_id>/tasks/<string:task_id>')
 class WorkflowTaskStatus(MethodView):
     @WorkflowApi.response(TaskExecutionSchema)
+    @validate_workgroup(arn_field_name='run_id')
     def get(self, run_id, task_id):
         """Get all status updates for specific task of workflow"""
         return db.session.query(TaskExecution)\
@@ -307,6 +340,7 @@ class WorkflowTaskStatus(MethodView):
 
 @WorkflowApi.route('/workflow/<string:run_id>/tasks/<string:task_id>/logs')
 class WorkflowTaskLogs(MethodView):
+    @validate_workgroup(arn_field_name='run_id')
     def get(self, run_id, task_id):
         """Get logs for specific task"""
         db_res = db.session.query(TaskExecution)\
@@ -320,4 +354,5 @@ class WorkflowTaskLogs(MethodView):
             startFromHead=False
         )
         return res
+
 

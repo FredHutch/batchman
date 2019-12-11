@@ -25,6 +25,7 @@ class WorkflowExecution(db.Model):
     nextflowIsSuccess = db.Column(db.Boolean())
     # these fields record user/batchman data
     username = db.Column(db.String()) # the UW NetId of the submitting user
+    workgroup = db.Column(db.String()) # the resource group used to submit the workflow
 
 class WorkflowExecutionSchema(ModelSchema):
     class Meta:

@@ -4,8 +4,8 @@ from flask_rest_api import Blueprint, abort
 from marshmallow import Schema, INCLUDE, fields
 
 from app.models import WeblogEvent
-from app.common import require_apikey
 from app import db
+from app.auth import get_jwt_groups
 
 AdminApi = Blueprint(
     'AdminApi', __name__,
@@ -13,8 +13,15 @@ AdminApi = Blueprint(
 )
 
 @AdminApi.route('/apikey')
-class ReceiveWeblog(MethodView):
+class ApiKey(MethodView):
     @AdminApi.response(code=201)
     def get(self):
-        """Returns the API_KEY"""        
-        return jsonify({"API_KEY": current_app.config["API_KEY"]})
+        """Returns the various api keys"""
+        defined_workgroups = current_app.config["WORKGROUPS"].keys()
+        user_groups = get_jwt_groups()
+        intersection = list(set(defined_workgroups) & set(user_groups))
+
+        workgroups = {g: current_app.config["WORKGROUPS"][g]["API_KEY"] for g in intersection}
+        return jsonify({
+            "WORKGROUP_API_KEY": workgroups
+        })
