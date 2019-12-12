@@ -86,3 +86,9 @@ div.searchresult > .key {
   word-break: break-all;
   white-space: pre-wrap;
 }
+
+form label {
+  font-weight: bold;
+  padding-top: 0px !important;
+}
+
