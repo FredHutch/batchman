@@ -125,10 +125,12 @@ class WorkflowList(MethodView):
             else:
                 env = current_app.config["WORKGROUPS"][WORKGROUP]
 
-        
+        nextflow_options = ["-with-trace"]
+        additional_env_vars = []
+        uuid_key = self._generate_key()
+
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
-            # 1a. If a workflow and config file was uploaded
-            uuid_key = self._generate_key()
+            # 1a. If a workflow and config file was uploaded    
             workflow_loc =  "%s/%s/%s/main.nf" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
             config_loc = "%s/%s/%s/nextflow.config" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
             try:
@@ -141,6 +143,8 @@ class WorkflowList(MethodView):
         elif ("git_url" in args):
             # 1b. Or, if a git url is provided
             execution_type = "GIT_URL"
+            if "git_hash" in args:
+                nextflow_options.append("-r " + args["git_hash"])
             command = ["runner.sh", git_url]
         elif ("s3_url" in args):
             # 1c. Or, a s3 url
@@ -150,10 +154,18 @@ class WorkflowList(MethodView):
             print(args)
             return jsonify({"error": "Invalid nextflow commands"}), 500
         
-        nextflow_options = ["-with-trace"]
+        if args.get("params_file", "") != "":
+            # upload params_file to S3 if provided. Runner.sh downloads this.
+            params_file_loc = "%s/%s/%s/params.json" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
+            try:
+                self._upload_to_s3(params_file_loc, args["params_file"])
+            except botocore.exceptions.ClientError:
+                return jsonify({"error": "unable to save params file."}), 500
+            nextflow_options.append("-params-file params.json")
+            additional_env_vars.append({"name": "NF_PARAMS_FILE", "value": params_file_loc})
+        
         if args.get("resume_fargate_task_arn", "") != "":
             # resume from prior nextflow execution
-            nextflow_options.append("-resume")
             resume_fargate_task_arn = args["resume_fargate_task_arn"]
             # ensure this arn was run as part of current group
             try:
@@ -163,8 +175,8 @@ class WorkflowList(MethodView):
                 abort(404)
             if w.workgroup != WORKGROUP:
                 return jsonify({"error": "You can only resume from workflows in the same workgroup"}), 401
-        else:
-            resume_fargate_task_arn = ""
+            nextflow_options.append("-resume")
+            additional_env_vars.append({"name": "NF_SESSION_CACHE_ARN", "value": resume_fargate_task_arn})
 
         try:
             res = ecs_client.run_task(
@@ -197,10 +209,7 @@ class WorkflowList(MethodView):
                                     "name": "NF_SESSION_CACHE_DIR",
                                     "value": env["NEXTFLOW_S3_SESSION_CACHE"]
                                 },
-                                {
-                                    "name": "NF_SESSION_CACHE_ARN",
-                                    "value": resume_fargate_task_arn
-                                },
+                                *additional_env_vars
                             ],
                         }
                     ]
