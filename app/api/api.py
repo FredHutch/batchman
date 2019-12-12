@@ -32,6 +32,9 @@ class CreateWorkflowArgs(Schema):
     nextflow_arguments = fields.String(location="json")
     nextflow_workflow = fields.String(location="json")
     nextflow_config = fields.String(location="json")
+    nextflow_params = fields.String(location="json")
+    git_url = fields.String(location="json")
+    git_hash = fields.String(location="json")
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
@@ -154,11 +157,11 @@ class WorkflowList(MethodView):
             print(args)
             return jsonify({"error": "Invalid nextflow commands"}), 500
         
-        if args.get("params_file", "") != "":
+        if args.get("nextflow_params", "") != "":
             # upload params_file to S3 if provided. Runner.sh downloads this.
             params_file_loc = "%s/%s/%s/params.json" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
             try:
-                self._upload_to_s3(params_file_loc, args["params_file"])
+                self._upload_to_s3(params_file_loc, args["nextflow_params"])
             except botocore.exceptions.ClientError:
                 return jsonify({"error": "unable to save params file."}), 500
             nextflow_options.append("-params-file params.json")
