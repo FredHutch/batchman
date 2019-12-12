@@ -148,11 +148,11 @@ class WorkflowList(MethodView):
             execution_type = "GIT_URL"
             if "git_hash" in args:
                 nextflow_options.append("-r " + args["git_hash"])
-            command = ["runner.sh", git_url]
+            command = ["runner.sh", args["git_url"]]
         elif ("s3_url" in args):
             # 1c. Or, a s3 url
             execution_type = "S3_URL"
-            command = ["runner.sh", s3_url]
+            command = ["runner.sh", args["s3_url"]]
         else:
             print(args)
             return jsonify({"error": "Invalid nextflow commands"}), 500
