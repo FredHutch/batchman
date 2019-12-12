@@ -180,6 +180,8 @@ class WorkflowList(MethodView):
                 return jsonify({"error": "You can only resume from workflows in the same workgroup"}), 401
             nextflow_options.append("-resume")
             additional_env_vars.append({"name": "NF_SESSION_CACHE_ARN", "value": resume_fargate_task_arn})
+        else:
+            resume_fargate_task_arn = ""
 
         try:
             res = ecs_client.run_task(
