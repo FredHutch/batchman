@@ -37,6 +37,7 @@ function WizardView(props) {
     const [workflowUrl, setWorkflowUrl] = useState("");
     const [resumeData, resumeDataIsLoading, resumeDataIsError] = useFetch("/api/v1/workflow");
     const [resumeSelection, setResumeSelection] = useState(null);
+    const [nextflowProfile, setNextflowProfile] = useState("aws");
 
     const [resultVal, setResultVal] = useState();
 
@@ -57,6 +58,7 @@ function WizardView(props) {
         const payload = {
             git_url: workflowUrl,
             //git_hash: git_hash,
+            nextflow_profile: nextflowProfile,
             resume_fargate_task_arn: resumeSelection || "",
             workgroup: profile.selectedWorkgroup.name
         }
@@ -131,6 +133,12 @@ function WizardView(props) {
                         }}
                         />
                 }
+              </Col>
+            </Form.Group>
+            <Form.Group as={Row} controlId="formUrl">
+              <Form.Label column sm={3}>Nextflow Profile:</Form.Label>
+              <Col sm={9}>
+                <Form.Control type="input" value={nextflowProfile} onChange={(e) =>setNextflowProfile(e.target.value)}/>
               </Col>
             </Form.Group>
             <Form.Group>
