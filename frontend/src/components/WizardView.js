@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useContext } from "react";
 import { useLocalStorage, useFetch } from "../hooks.js";
 
 import { navigate } from "@reach/router"
-import * as queryString from 'query-string';
+import { parse } from 'query-string';
 
 import { ProfileContext } from "../App.js";
 
@@ -43,7 +43,7 @@ function WizardView(props) {
 
     const profile = useContext(ProfileContext)
 
-    const {arn} = queryString.parse(props.location.search);
+    const {arn} = parse(props.location.search);
     useEffect(
         // fill in form if prior arn is passed in via query
         () => {
@@ -54,10 +54,10 @@ function WizardView(props) {
     )
 
     const handleSubmit = () => {
-        // TODO: separate git hash from url
+        const [url, hash] = workflowUrl.split("#")
         const payload = {
-            git_url: workflowUrl,
-            //git_hash: git_hash,
+            git_url: url,
+            git_hash: hash,
             nextflow_profile: nextflowProfile,
             resume_fargate_task_arn: resumeSelection || "",
             workgroup: profile.selectedWorkgroup.name
