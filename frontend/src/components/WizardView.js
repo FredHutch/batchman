@@ -36,7 +36,7 @@ function WizardView(props) {
     document.title = "Submit Workflow"
     
     const [workflowUrl, setWorkflowUrl] = useState("");
-    const [paramsData, setParamsData] = useState("");
+    const [paramsData, setParamsData] = useState(null);
     const [resumeData, resumeDataIsLoading, resumeDataIsError] = useFetch("/api/v1/workflow");
     const [resumeSelection, setResumeSelection] = useState(null);
     const [nextflowProfile, setNextflowProfile] = useState("aws");
