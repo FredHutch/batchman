@@ -21,13 +21,13 @@ function AppNavbar(props) {
 	      	<Nav.Link as={Link} to="/workflow">Workflows</Nav.Link>
 	      	{userCanSubmit && ( <Nav.Link as={Link} to="/submit">Submit</Nav.Link>)}
 	      	</Nav>
-	      	<Nav pullRight>
+	      	<Nav className="pull-right">
 	      	{userCanSubmit 
 	      	  ? <NavDropdown className='mr-sm-2'
 		      		title={<span className='font-weight-bold' style={{color: "white"}}>{"Workgroup: " + profile.selectedWorkgroup.display_name}</span>}
 		      		onSelect={(key) => profile.setWorkgroup(key)}
 		      		id="workgroup-nav-dropdown">
-			        {profile.workgroups.map(w => (<NavDropdown.Item eventKey={w.name}>{w.display_name}</NavDropdown.Item>))}
+			        {profile.workgroups.map(w => (<NavDropdown.Item key={w.name} eventKey={w.name}>{w.display_name}</NavDropdown.Item>))}
 			    </NavDropdown>
 		      : <span className='font-weight-bold' style={{color: "white"}}>Read only access</span>
 		    }

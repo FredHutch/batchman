@@ -22,6 +22,7 @@ import 'react-bootstrap-typeahead/css/Typeahead-bs4.css';
 import { Typeahead } from 'react-bootstrap-typeahead';
 
 import { parseStatus, BADGE_STYLES } from "./Widgets.js"
+import UploadEditor from "./UploadEditor.js"
 import { format, formatRelative } from 'date-fns/fp'
 
 const now = new Date();
@@ -35,6 +36,7 @@ function WizardView(props) {
     document.title = "Submit Workflow"
     
     const [workflowUrl, setWorkflowUrl] = useState("");
+    const [paramsData, setParamsData] = useState("");
     const [resumeData, resumeDataIsLoading, resumeDataIsError] = useFetch("/api/v1/workflow");
     const [resumeSelection, setResumeSelection] = useState(null);
     const [nextflowProfile, setNextflowProfile] = useState("aws");
@@ -59,6 +61,7 @@ function WizardView(props) {
             git_url: url,
             git_hash: hash,
             nextflow_profile: nextflowProfile,
+            nextflow_params: paramsData,
             resume_fargate_task_arn: resumeSelection || "",
             workgroup: profile.selectedWorkgroup.name
         }
@@ -96,7 +99,7 @@ function WizardView(props) {
             <Form.Group as={Row} controlId="formParamsFile">
               <Form.Label column sm={3}>Additional Parameters:</Form.Label>
               <Col sm={9}>
-                <Form.Control type="file" />
+                <UploadEditor fileContents={paramsData} setFileContents={setParamsData} />
               </Col>
             </Form.Group>
             <Form.Group as={Row} controlId="formResumeSelection">
