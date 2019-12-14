@@ -298,12 +298,19 @@ function WorkflowDetailView({ runArn }) {
             <Button variant="outline-primary" style={{width: "100%"}} onClick={() => setNextflowModalData({workflowTaskArn: runData.fargateTaskArn})} >
                 View Nextflow Logs
             </Button>
-            <Button variant="outline-primary mt-3" style={{width: "100%"}} onClick={() => setNextflowScriptModalData({workflowTaskArn: runData.fargateTaskArn})} >
-                View Script and Config Files
-            </Button>
-            <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit?arn=${runData.fargateTaskArn}`)}>
-                Edit and Resubmit
-            </Button>
+            {runData.launchMetadata.execution_type === "FILES" && <>
+                <Button variant="outline-primary mt-3" style={{width: "100%"}} onClick={() => setNextflowScriptModalData({workflowTaskArn: runData.fargateTaskArn})} >
+                    View Script and Config Files
+                </Button>
+                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit?arn=${runData.fargateTaskArn}`)}>
+                    Edit and Resubmit
+                </Button></>
+            }
+            {runData.launchMetadata.execution_type === "GIT_URL" &&
+                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/wizard?arn=${runData.fargateTaskArn}`)}>
+                    Edit and Resubmit
+                </Button>
+            }
             <StopWorkflowButton 
                 aws_status={runData.fargateLastStatus}
                 nf_status={runData.nextflowLastEvent}
