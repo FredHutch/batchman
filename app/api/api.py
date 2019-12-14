@@ -132,6 +132,9 @@ class WorkflowList(MethodView):
         nextflow_options = ["-with-trace"]
         additional_env_vars = []
         uuid_key = self._generate_key()
+        workflow_loc = None
+        config_loc = None
+        params_file_loc = None
 
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
             # 1a. If a workflow and config file was uploaded    
@@ -241,9 +244,9 @@ class WorkflowList(MethodView):
         launchMetadataJson = {
             "execution_type": execution_type, # FILES | GIT_URL
             "execution_source": "WEB", # TODO: could be lambda, api, etc?
-            "git_url": git_url,
-            "git_hash": git_hash,
-            "nextflow_profile": nextflow_profile,
+            "git_url": args.get("git_url", None),
+            "git_hash": args.get("git_hash", None),
+            "nextflow_profile": args.get("nextflow_profile", None),
             "params_loc": params_file_loc,
             "workflow_loc": workflow_loc,
             "config_loc": config_loc,
