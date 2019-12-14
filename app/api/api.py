@@ -238,7 +238,16 @@ class WorkflowList(MethodView):
         # save to database -- must serialize the date to string first
         infoJson = res['tasks'][0].copy()
         infoJson['createdAt'] = str(infoJson['createdAt'])
-
+        launchMetadataJson = {
+            "execution_type": execution_type, # FILES | GIT_URL
+            "execution_source": "WEB", # TODO: could be lambda, api, etc?
+            "git_url": git_url,
+            "git_hash": git_hash,
+            "nextflow_profile": nextflow_profile,
+            "params_loc": params_file_loc,
+            "workflow_loc": workflow_loc,
+            "config_loc": config_loc,
+        }
         e = WorkflowExecution(
             fargateTaskArn=taskArn,
             fargateCreatedAt=res['tasks'][0]['createdAt'],
@@ -249,6 +258,7 @@ class WorkflowList(MethodView):
             cacheTaskArn=resume_fargate_task_arn,
             username=get_jwt_identity(),
             workgroup=WORKGROUP,
+            launchMetadata=launchMetadataJson,
         )
         db.session.add(e)
         db.session.commit()
@@ -334,6 +344,7 @@ class WorkflowTasks(MethodView):
 
 @WorkflowApi.route('/workflow/<string:id>/script')
 @WorkflowApi.route('/workflow/<string:id>/config')
+@WorkflowApi.route('/workflow/<string:id>/params')
 class WorkflowScriptFile(MethodView):
     @validate_workgroup()
     def get(self, id):
@@ -343,9 +354,11 @@ class WorkflowScriptFile(MethodView):
             db_res = db.session.query(WorkflowExecution)\
                 .filter(WorkflowExecution.fargateTaskArn==id).one()
             if FILE == "script":
-                s3_url = db_res.fargateMetadata["detail"]["overrides"]["containerOverrides"][0]["command"][1]
+                s3_url = db_res.launchMetadata["workflow_loc"]
             elif FILE == "config":
-                s3_url = db_res.fargateMetadata["detail"]["overrides"]["containerOverrides"][0]["command"][2]
+                s3_url = db_res.launchMetadata["config_loc"]
+            elif FILE == "params":
+                s3_url = db_res.launchMetadata["params_loc"]
             else:
                 abort(500)
         except sqlalchemy.orm.exc.NoResultFound:
