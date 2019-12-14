@@ -231,8 +231,8 @@ class WorkflowList(MethodView):
                     },
                 },
             )
-        except botocore.exceptions.ClientError:
-            return jsonify({"error": "unable to launch job"}), 500
+        except botocore.exceptions.ClientError as e:
+            return jsonify({"error": "unable to launch job", "msg": e}), 500
 
         taskArn = res['tasks'][0]['taskArn'].split(":task/")[1]
         # save to database -- must serialize the date to string first
