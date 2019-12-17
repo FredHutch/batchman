@@ -302,12 +302,12 @@ function WorkflowDetailView({ runArn }) {
                 <Button variant="outline-primary mt-3" style={{width: "100%"}} onClick={() => setNextflowScriptModalData({workflowTaskArn: runData.fargateTaskArn})} >
                     View Script and Config Files
                 </Button>
-                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit?arn=${runData.fargateTaskArn}`)}>
+                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit/editor?arn=${runData.fargateTaskArn}`)}>
                     Edit and Resubmit
                 </Button></>
             }
             {runData.launchMetadata.execution_type === "GIT_URL" &&
-                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/wizard?arn=${runData.fargateTaskArn}`)}>
+                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit/repository?arn=${runData.fargateTaskArn}`)}>
                     Edit and Resubmit
                 </Button>
             }

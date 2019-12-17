@@ -19,12 +19,7 @@ function AppNavbar(props) {
 		  <Navbar.Collapse>
 	    	<Nav className="mr-auto">
 	      	<Nav.Link as={Link} to="/workflow">Workflows</Nav.Link>
-	      	{userCanSubmit && ( 
-	      		<>
-	      			<Nav.Link as={Link} to="/submit">Submit</Nav.Link>
-	      			<Nav.Link as={Link} to="/wizard">Wizard</Nav.Link>
-	      		</>
-	      	)}
+	      	{userCanSubmit && <Nav.Link as={Link} to="/submit">Submit</Nav.Link>}
 	      	</Nav>
 	      	<Nav className="pull-right">
 	      	{userCanSubmit 

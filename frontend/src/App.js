@@ -5,7 +5,6 @@ import AppNavbar from "./components/AppNavbar.js";
 import WorkflowListView from   "./components/WorkflowListView.js";
 import WorkflowDetailView from "./components/WorkflowDetailView.js";
 import SubmitView from "./components/SubmitView.js";
-import WizardView from "./components/WizardView.js";
 
 import { ClientContextProvider } from 'react-fetching-library';
 import { createClient } from 'react-fetching-library';
@@ -54,8 +53,7 @@ class App extends React.Component {
         <Router>
           <WorkflowListView path="/workflows" default/>
           <WorkflowDetailView path="/workflows/:runArn" />
-          <SubmitView path="/submit" />
-          <WizardView path="/wizard" />
+          <SubmitView path="/submit/*" />
         </Router>
       </div>
     </ProfileContext.Provider>

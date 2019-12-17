@@ -26,9 +26,8 @@ const handleError = (response) => {
     return response.json()  //we only get here if there is no error
 }
 
-function WizardView(props) {
-    document.title = "Submit Workflow"
-    
+function GitLaunchForm(props) {
+
     const [workflowUrl, setWorkflowUrl] = useState("");
     const [paramsData, setParamsData] = useState(null);
     const [resumeData, resumeDataIsLoading, resumeDataIsError] = useFetch("/api/v1/workflow");
@@ -88,7 +87,6 @@ function WizardView(props) {
         .catch(error => {error.json().then(setResultVal)})
         
     }
-    const UploadButton = () => (<Button>Upload JSON</Button>)
     return (
         <Container fluid>
         <Row>
@@ -146,4 +144,4 @@ function WizardView(props) {
     )    
 }
 
-export default WizardView;
+export default GitLaunchForm;

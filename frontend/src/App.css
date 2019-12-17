@@ -92,3 +92,24 @@ form label {
   padding-top: 0px !important;
 }
 
+.bucket-card {
+  text-decoration: none;
+  color: black;
+  width: 250px;
+  height: 200px;
+  cursor: pointer;
+  margin-right: 40px;
+  margin-top: 20px;
+  margin-left: 20px;
+  padding-top: 20px;
+}
+
+.bucket-card:hover {
+  border: 1px solid blue;
+  text-decoration: none;
+}
+
+.bucket-card > div {
+  display: inline-block;
+  text-align: center;
+}
