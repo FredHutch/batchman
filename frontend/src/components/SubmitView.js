@@ -18,6 +18,7 @@ import "bootstrap/dist/css/bootstrap.css";
 
 import EditorLaunchForm from "./EditorLaunchForm.js"
 import GitLaunchForm from "./GitLaunchForm.js"
+import TemplateLaunchForm from "./TemplateLaunchForm.js"
 
 const SubmitHome = (props) => {
     const {arn} = parse(props.location.search);
@@ -41,7 +42,7 @@ const SubmitHome = (props) => {
                     <Card.Title>Git Repository</Card.Title>
                   </Card.Body>
                 </Card>
-                <Card className='bucket-card shadow-sm'>
+                <Card className='bucket-card shadow-sm' as={Link} to='template'>
                   <Card.Body>
                   <Card.Title><GoBeaker size="3em" style={{color: "#999"}}/></Card.Title>
                     <Card.Title>Template</Card.Title>
@@ -61,6 +62,7 @@ function SubmitView(props) {
           <SubmitHome path="/" />
           <EditorLaunchForm path="editor" />
           <GitLaunchForm path="repository" />
+          <TemplateLaunchForm path="template" />
         </Router>
         
     )    
