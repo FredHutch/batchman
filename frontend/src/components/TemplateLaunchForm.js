@@ -24,6 +24,8 @@ import "ace-builds/src-noconflict/theme-github";
 import "ace-builds/src-noconflict/keybinding-sublime";
 import AceEditor from "react-ace"
 
+import UploadEditor from "./UploadEditor.js"
+
 const handleError = (response) => {
     if (!response.ok) { return false }
     return response.json()  //we only get here if there is no error
@@ -33,11 +35,17 @@ const log = (type) => console.log.bind(console, type);
 
 function TemplateLaunchForm(props) {
     
-    const profile = useContext(ProfileContext)
+    const userProfile = useContext(ProfileContext)
+    const [nextflowProfile, setNextflowProfile] = useState("aws");
 
     const [workflowUrl, setWorkflowUrl] = useState("");
     const [templateSchema, setTemplateSchema] = useState({});
+    const [jsonParams, setJsonParams] = useState();
+    const [uploadParams, setUploadParams] = useState(null);
     const [mode, setMode] = useState();
+    const [errorMsg, setErrorMsg] = useState();
+
+    const paramsFormRef = useRef(null);
 
     const template = useMemo(() => {
       try {
@@ -51,7 +59,7 @@ function TemplateLaunchForm(props) {
             setTemplateSchema(templateRes)
             setMode("template")
           } else if (paramsRes) {
-            setResultVal(paramsRes)
+            setJsonParams(paramsRes)
             setMode("params")
           } else {
             setMode("none")
@@ -62,9 +70,7 @@ function TemplateLaunchForm(props) {
         console.log(err)
       }
     }, [workflowUrl])
-    const paramsFormRef = useRef(null);
-    const [nextflowProfile, setNextflowProfile] = useState("aws");
-    const [resultVal, setResultVal] = useState();
+    
     const handleSubmit = ({formData}, e) => {
       const [url, hash] = workflowUrl.split("#")
       const payload = {
@@ -73,7 +79,7 @@ function TemplateLaunchForm(props) {
           nextflow_profile: nextflowProfile,
           nextflow_params: JSON.stringify(formData),
            //resume_fargate_task_arn: resumeSelection || "",
-          workgroup: profile.selectedWorkgroup.name
+          workgroup: userProfile.selectedWorkgroup.name
       }
        fetch("/api/v1/workflow", {
            method: "POST",
@@ -87,12 +93,12 @@ function TemplateLaunchForm(props) {
        .then(data => {
            navigate(`/workflows/${data.fargateTaskArn}`)
        })
-       .catch(error => {error.json().then(setResultVal)})
+       .catch(error => {error.json().then(setErrorMsg)})
     }
     const handleJsonEdit = (text) => {
       try {
         const jsonVal = JSON.parse(text)
-        setResultVal(jsonVal);
+        setJsonParams(jsonVal);
       } catch {
         return false
       }
@@ -109,8 +115,8 @@ function TemplateLaunchForm(props) {
               <Form.Label column sm={3}>Repository URL:</Form.Label>
               <Col sm={9}>
                 <Form.Control type="input" value={workflowUrl} onChange={(e) =>setWorkflowUrl(e.target.value)}/>
-                {mode === "template" ? <div className="mt-2"><GoInfo color="green"/> Using <tt style={{fontSize: 16}}>template.json</tt>. You may edit values below before submitting.</div> : null}
-                {mode === "params" ? <div className="mt-2"><GoInfo color="green"/> Using <tt style={{fontSize: 16}}>params.json</tt>. You may edit values below before submitting.</div> : null}
+                {mode === "template" ? <div className="mt-2"><GoInfo color="green"/> Using <tt style={{fontSize: 16}}>template.json</tt>. You may edit values below before submitting or upload a new file.</div> : null}
+                {mode === "params" ? <div className="mt-2"><GoInfo color="green"/> Using <tt style={{fontSize: 16}}>params.json</tt>. You may edit values below before submitting or upload a new file.</div> : null}
                 {mode === "none" ? <div className="mt-2"><GoInfo color="orange"/> No parameter specification found. If needed, edit or upload appropriate params.json below before submitting.</div> : null}
               </Col>
             </Form.Group>
@@ -124,22 +130,22 @@ function TemplateLaunchForm(props) {
                   <Col sm={9}>
                     <Tabs defaultActiveKey={mode} id="params-tabs" transition={false} >
                       {mode === "template" && 
-                        <Tab eventKey="template" title="Template">
+                        <Tab eventKey="template" title="Template" disabled={uploadParams !== null}>
                           <SchemaForm schema={templateSchema}
-                              formData={resultVal}
+                              formData={jsonParams}
                               ref={paramsFormRef}
                               onSubmit={handleSubmit}
-                              onChange={({formData}) => setResultVal(formData)}
+                              onChange={({formData}) => setJsonParams(formData)}
                               onError={log("errors")} 
                               showErrorList={false}
                           ><div></div></SchemaForm>
                         </Tab>
                       }
-                      <Tab eventKey="params" title="Edit JSON">
+                      <Tab eventKey="params" title="Edit JSON" disabled={uploadParams !== null}>
                         <AceEditor
                           mode="text"
                           keyboardHandler="sublime"
-                          value={JSON.stringify(resultVal,undefined, 2)}
+                          value={JSON.stringify(jsonParams, undefined, 2)}
                           onChange={handleJsonEdit}
                           name="filed-editor-div"
                           editorProps={{ $blockScrolling: true }}
@@ -149,7 +155,8 @@ function TemplateLaunchForm(props) {
                           showPrintMargin={false}
                           focus={true} />
                       </Tab>
-                      <Tab eventKey="upload" title="Upload" disabled={true}>
+                      <Tab eventKey="upload" title="Upload">
+                        <UploadEditor fileContents={uploadParams} setFileContents={setUploadParams}/>
                       </Tab>
                     </Tabs>
                   </Col>
@@ -163,7 +170,7 @@ function TemplateLaunchForm(props) {
                 <Form.Group>
                     <div style={{textAlign: "right"}}>
                         {mode === "template" && <Button size="lg" onClick={() => paramsFormRef.current.submit()}>Run Workflow <GoZap /></Button>}
-                        {mode === "params" && <Button size="lg" onClick={() => handleSubmit({formData: resultVal})}>Run Workflow <GoZap /></Button>}
+                        {mode === "params" && <Button size="lg" onClick={() => handleSubmit({formData: jsonParams})}>Run Workflow <GoZap /></Button>}
                     </div>
                 </Form.Group>
               </div>
