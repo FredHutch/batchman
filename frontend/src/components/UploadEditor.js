@@ -73,7 +73,6 @@ const UploadEditor = ({fileContents, setFileContents}) => {
           reader.onerror = () => console.log('file reading has failed')
           reader.onload = (event) => {
             // executed when file is read
-            console.log(event.target.result)
             setFileContents(event.target.result)
           }
           // actually read the file
