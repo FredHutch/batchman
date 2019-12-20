@@ -36,16 +36,10 @@ const SubmitHome = (props) => {
                     <Card.Title>Interactive Editor</Card.Title>
                   </Card.Body>
                 </Card>
-                <Card className='bucket-card shadow-sm' as={Link} to='repository'>
-                  <Card.Body>
-                    <Card.Title><GoGitBranch size="3em" style={{color: "#999"}}/></Card.Title>
-                    <Card.Title>Git Repository</Card.Title>
-                  </Card.Body>
-                </Card>
                 <Card className='bucket-card shadow-sm' as={Link} to='template'>
                   <Card.Body>
                   <Card.Title><GoBeaker size="3em" style={{color: "#999"}}/></Card.Title>
-                    <Card.Title>Template</Card.Title>
+                    <Card.Title>URL & Template</Card.Title>
                   </Card.Body>
                 </Card>     
                 </div> 
