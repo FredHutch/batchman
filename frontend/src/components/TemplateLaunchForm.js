@@ -53,13 +53,20 @@ function TemplateLaunchForm(props) {
 
     const paramsFormRef = useRef(null);
 
+    const parseUrl = (url) => {
+      let [baseurl, hash] = url.split("#")
+      hash = hash || "master"
+      return [baseurl, hash]
+    }
+
     useMemo(() => {
       try {
-        const contentUrl = workflowUrl.replace("github.com", "raw.githubusercontent.com")
+        const [url, hash] = parseUrl(workflowUrl);
+        const contentUrl = url.replace("github.com", "raw.githubusercontent.com")
         Promise.all([
-            fetch(`${contentUrl}/master/template.json`).then(handleError),
-            fetch(`${contentUrl}/master/params.json`).then(handleError),
-            fetch(`${contentUrl}/master/nextflow.config`),
+            fetch(`${contentUrl}/${hash}/template.json`).then(handleError),
+            fetch(`${contentUrl}/${hash}/params.json`).then(handleError),
+            fetch(`${contentUrl}/${hash}/nextflow.config`),
         ]).then(([templateRes, paramsRes, configRes]) => {
           if (templateRes){
             setTemplateSchema(templateRes)
@@ -124,7 +131,7 @@ function TemplateLaunchForm(props) {
         
     }
     const _handleSubmit = (params) => {
-        const [url, hash] = workflowUrl.split("#")
+        const [url, hash] = parseUrl(workflowUrl)
         const payload = {
             git_url: url,
             git_hash: hash,
