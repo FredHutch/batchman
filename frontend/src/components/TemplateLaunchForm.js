@@ -25,6 +25,7 @@ import "ace-builds/src-noconflict/keybinding-sublime";
 import AceEditor from "react-ace"
 
 import UploadEditor from "./UploadEditor.js"
+import ResumeSelectorComponent from "./ResumeSelectorComponent.js"
 
 const handleError = (response) => {
     if (!response.ok) { return false }
@@ -34,11 +35,15 @@ const handleError = (response) => {
 const log = (type) => console.log.bind(console, type);
 
 function TemplateLaunchForm(props) {
-    
+    // for workgroup
     const userProfile = useContext(ProfileContext)
+    // resume selector
+    const [resumeData, resumeDataIsLoading, resumeDataIsError] = useFetch("/api/v1/workflow");
+    const [resumeSelection, setResumeSelection] = useState(null);
+    // profile information
     const [nextflowProfile, setNextflowProfile] = useState("aws");
     const [nextflowConfig, setNextflowConfig] = useState();
-
+    // form fields + params
     const [workflowUrl, setWorkflowUrl] = useState("");
     const [templateSchema, setTemplateSchema] = useState({});
     const [jsonParams, setJsonParams] = useState();
@@ -72,24 +77,34 @@ function TemplateLaunchForm(props) {
       }
     }, [workflowUrl])
     const parseConfig = (config) => {
+
+    }
+    const handleSubmit = () => {
+        var nextflow_params, parsedParams;
+        if (uploadParams){ // if file uploaded, use that
+          // validate if uploaded file is valid as submitted
+          try {
+            parsedParams = JSON.parse(uploadParams)
+          } catch (err) {
+            setErrorMsg("Error parsing uploaded JSON")
+            return false
+          }
+          _handleSubmit(parsedParams)
+        } else if (jsonParams) { // if template or json editing happened (these are synced)
+          paramsFormRef.current.submit()
+        } else {
+          _handleSubmit(null)
+        }
         
     }
-    const handleSubmit = (params) => {
-        var nextflow_params;
-        if (uploadParams){ // if file uploaded, use that
-          nextflow_params = uploadParams;
-        } else if (jsonParams) { // if template or json editing happened (these are synced)
-          nextflow_params = JSON.stringify(jsonParams);
-        } else {
-          nextflow_params = null;
-        }
+    const _handleSubmit = (params) => {
         const [url, hash] = workflowUrl.split("#")
         const payload = {
             git_url: url,
             git_hash: hash,
             nextflow_profile: nextflowProfile,
-            'nextflow_params': nextflow_params,
-              //resume_fargate_task_arn: resumeSelection || "",
+            nextflow_params: JSON.stringify(params, undefined, 2),
+            resume_fargate_task_arn: resumeSelection || "",
             workgroup: userProfile.selectedWorkgroup.name
         }
         //console.log(payload)
@@ -146,7 +161,7 @@ function TemplateLaunchForm(props) {
                           <SchemaForm schema={templateSchema}
                               formData={jsonParams}
                               ref={paramsFormRef}
-                              onSubmit={({formData}) => handleSubmit(formData)}
+                              onSubmit={({formData}) => _handleSubmit(formData)}
                               onChange={({formData}) => setJsonParams(formData)}
                               onError={log("errors")} 
                               showErrorList={false}
@@ -179,10 +194,24 @@ function TemplateLaunchForm(props) {
                     <Form.Control type="input" value={nextflowProfile} onChange={(e) =>setNextflowProfile(e.target.value)}/>
                   </Col>
                 </Form.Group>
+                <Form.Group as={Row} controlId="formResumeSelection">
+                  <Form.Label column sm={3}>Resume from:</Form.Label>
+                  <Col sm={9}>
+                    <ResumeSelectorComponent 
+                        resumeData={resumeData}
+                        resumeDataIsLoading={resumeDataIsLoading}
+                        resumeSelection={resumeSelection}
+                        setResumeSelection={setResumeSelection}
+                        dropup={false}
+                        bsSize="medium"
+                    />
+                  </Col>
+                </Form.Group>
                 <Form.Group>
                     <div style={{textAlign: "right"}}>
                       <Button size="lg" onClick={() => handleSubmit()}>Run Workflow <GoZap /></Button>
                     </div>
+                    {errorMsg !==null ? <pre className='text-danger'>{errorMsg}</pre> : null}
                 </Form.Group>
               </div>
             //end if workflowUrl
