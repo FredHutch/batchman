@@ -76,7 +76,34 @@ function TemplateLaunchForm(props) {
         console.log(err)
       }
     }, [workflowUrl])
-    
+
+
+ 
+    const {arn} = parse(props.location.search);
+    useEffect(
+        // fill in form if prior arn is passed in via query
+        () => {
+            fetch(`/api/v1/workflow/${arn}`)
+            .then(handleError)
+            .then(data => {
+                setWorkflowUrl(`${data.launchMetadata.git_url}#${data.launchMetadata.git_hash}`)
+                setNextflowProfile(data.launchMetadata.nextflow_profile)
+                setResumeSelection(arn)
+            })
+            .catch(error => {console.log(error)})
+            fetch(`/api/v1/workflow/${arn}/params`)
+            .then(handleError)
+            .then(data => {
+                if (data.contents !== undefined){
+                  setMode("params")
+                  setJsonParams(data.contents)
+                }
+            })
+            .catch(error => {console.log(error)})
+            
+        },
+        [props.arn]
+    )
 
     const handleSubmit = () => {
         var nextflow_params, parsedParams;
