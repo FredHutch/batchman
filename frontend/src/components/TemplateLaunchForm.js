@@ -37,6 +37,7 @@ function TemplateLaunchForm(props) {
     
     const userProfile = useContext(ProfileContext)
     const [nextflowProfile, setNextflowProfile] = useState("aws");
+    const [nextflowConfig, setNextflowConfig] = useState();
 
     const [workflowUrl, setWorkflowUrl] = useState("");
     const [templateSchema, setTemplateSchema] = useState({});
@@ -64,36 +65,47 @@ function TemplateLaunchForm(props) {
           } else {
             setMode("none")
           }
-
+          parseConfig(configRes);
         })
       } catch(err) {
         console.log(err)
       }
     }, [workflowUrl])
-    
-    const handleSubmit = ({formData}, e) => {
-      const [url, hash] = workflowUrl.split("#")
-      const payload = {
-          git_url: url,
-          git_hash: hash,
-          nextflow_profile: nextflowProfile,
-          nextflow_params: JSON.stringify(formData),
-           //resume_fargate_task_arn: resumeSelection || "",
-          workgroup: userProfile.selectedWorkgroup.name
-      }
-       fetch("/api/v1/workflow", {
-           method: "POST",
-           headers: {
-             'Accept': 'application/json',
-             'Content-Type': 'application/json'
-           },
-           body: JSON.stringify(payload)
-       })
-       .then(handleError)
-       .then(data => {
-           navigate(`/workflows/${data.fargateTaskArn}`)
-       })
-       .catch(error => {error.json().then(setErrorMsg)})
+    const parseConfig = (config) => {
+        
+    }
+    const handleSubmit = (params) => {
+        var nextflow_params;
+        if (uploadParams){ // if file uploaded, use that
+          nextflow_params = uploadParams;
+        } else if (jsonParams) { // if template or json editing happened (these are synced)
+          nextflow_params = JSON.stringify(jsonParams);
+        } else {
+          nextflow_params = null;
+        }
+        const [url, hash] = workflowUrl.split("#")
+        const payload = {
+            git_url: url,
+            git_hash: hash,
+            nextflow_profile: nextflowProfile,
+            'nextflow_params': nextflow_params,
+              //resume_fargate_task_arn: resumeSelection || "",
+            workgroup: userProfile.selectedWorkgroup.name
+        }
+        //console.log(payload)
+        fetch("/api/v1/workflow", {
+            method: "POST",
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(handleError)
+        .then(data => {
+            navigate(`/workflows/${data.fargateTaskArn}`)
+        })
+        .catch(error => {error.json().then(setErrorMsg)})
     }
     const handleJsonEdit = (text) => {
       try {
@@ -134,7 +146,7 @@ function TemplateLaunchForm(props) {
                           <SchemaForm schema={templateSchema}
                               formData={jsonParams}
                               ref={paramsFormRef}
-                              onSubmit={handleSubmit}
+                              onSubmit={({formData}) => handleSubmit(formData)}
                               onChange={({formData}) => setJsonParams(formData)}
                               onError={log("errors")} 
                               showErrorList={false}
@@ -169,8 +181,7 @@ function TemplateLaunchForm(props) {
                 </Form.Group>
                 <Form.Group>
                     <div style={{textAlign: "right"}}>
-                        {mode === "template" && <Button size="lg" onClick={() => paramsFormRef.current.submit()}>Run Workflow <GoZap /></Button>}
-                        {mode === "params" && <Button size="lg" onClick={() => handleSubmit({formData: jsonParams})}>Run Workflow <GoZap /></Button>}
+                      <Button size="lg" onClick={() => handleSubmit()}>Run Workflow <GoZap /></Button>
                     </div>
                 </Form.Group>
               </div>
