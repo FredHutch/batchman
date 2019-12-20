@@ -53,7 +53,7 @@ function TemplateLaunchForm(props) {
 
     const paramsFormRef = useRef(null);
 
-    const template = useMemo(() => {
+    useMemo(() => {
       try {
         const contentUrl = workflowUrl.replace("github.com", "raw.githubusercontent.com")
         Promise.all([
@@ -70,15 +70,14 @@ function TemplateLaunchForm(props) {
           } else {
             setMode("none")
           }
-          parseConfig(configRes);
+
         })
       } catch(err) {
         console.log(err)
       }
     }, [workflowUrl])
-    const parseConfig = (config) => {
+    
 
-    }
     const handleSubmit = () => {
         var nextflow_params, parsedParams;
         if (uploadParams){ // if file uploaded, use that
