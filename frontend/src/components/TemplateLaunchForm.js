@@ -45,6 +45,7 @@ function TemplateLaunchForm(props) {
     const [nextflowConfig, setNextflowConfig] = useState();
     // form fields + params
     const [workflowUrl, setWorkflowUrl] = useState("");
+    const [workflowHash, setWorkflowHash] = useState("master");
     const [templateSchema, setTemplateSchema] = useState({});
     const [jsonParams, setJsonParams] = useState();
     const [uploadParams, setUploadParams] = useState(null);
@@ -53,20 +54,24 @@ function TemplateLaunchForm(props) {
 
     const paramsFormRef = useRef(null);
 
-    const parseUrl = (url) => {
-      let [baseurl, hash] = url.split("#")
-      hash = hash || "master"
-      return [baseurl, hash]
+    const generateRawUrl = (url, hash) => {
+      if (url.includes("github.com")){
+        const rawurl = url.replace("github.com", "raw.githubusercontent.com")
+        return `${rawurl}/${hash}`
+      } else if (url.includes("gitlab.com")) {
+        return `${url}/raw/${hash}/`
+      } else {
+        // todo: raise error
+      }
     }
 
     useMemo(() => {
       try {
-        const [url, hash] = parseUrl(workflowUrl);
-        const contentUrl = url.replace("github.com", "raw.githubusercontent.com")
+        const rawUrl = generateRawUrl(workflowUrl, workflowHash);
         Promise.all([
-            fetch(`${contentUrl}/${hash}/template.json`).then(handleError),
-            fetch(`${contentUrl}/${hash}/params.json`).then(handleError),
-            fetch(`${contentUrl}/${hash}/nextflow.config`),
+            fetch(`${rawUrl}/template.json`).then(handleError),
+            fetch(`${rawUrl}/params.json`).then(handleError),
+            fetch(`${rawUrl}/nextflow.config`),
         ]).then(([templateRes, paramsRes, configRes]) => {
           if (templateRes){
             setTemplateSchema(templateRes)
@@ -82,32 +87,33 @@ function TemplateLaunchForm(props) {
       } catch(err) {
         console.log(err)
       }
-    }, [workflowUrl])
+    }, [workflowUrl, workflowHash])
 
 
  
     const {arn} = parse(props.location.search);
     useEffect(
         // fill in form if prior arn is passed in via query
-        () => {
-            fetch(`/api/v1/workflow/${arn}`)
-            .then(handleError)
-            .then(data => {
-                setWorkflowUrl(`${data.launchMetadata.git_url}#${data.launchMetadata.git_hash}`)
-                setNextflowProfile(data.launchMetadata.nextflow_profile)
-                setResumeSelection(arn)
-            })
-            .catch(error => {console.log(error)})
-            fetch(`/api/v1/workflow/${arn}/params`)
-            .then(handleError)
-            .then(data => {
-                if (data.contents !== undefined){
-                  setMode("params")
-                  setJsonParams(data.contents)
-                }
-            })
-            .catch(error => {console.log(error)})
-            
+        (arn) => {
+          if (arn !== undefined){
+              fetch(`/api/v1/workflow/${arn}`)
+                .then(handleError)
+                .then(data => {
+                    setWorkflowUrl(`${data.launchMetadata.git_url}#${data.launchMetadata.git_hash}`)
+                    setNextflowProfile(data.launchMetadata.nextflow_profile)
+                    setResumeSelection(arn)
+                })
+                .catch(error => {console.log(error)})
+              fetch(`/api/v1/workflow/${arn}/params`)
+                .then(handleError)
+                .then(data => {
+                    if (data.contents !== undefined){
+                      setMode("params")
+                      setJsonParams(data.contents)
+                    }
+                })
+                .catch(error => {console.log(error)})
+          }
         },
         [props.arn]
     )
@@ -131,10 +137,9 @@ function TemplateLaunchForm(props) {
         
     }
     const _handleSubmit = (params) => {
-        const [url, hash] = parseUrl(workflowUrl)
         const payload = {
-            git_url: url,
-            git_hash: hash,
+            git_url: workflowUrl,
+            git_hash: workflowHash,
             nextflow_profile: nextflowProfile,
             nextflow_params: JSON.stringify(params, undefined, 2),
             resume_fargate_task_arn: resumeSelection || "",
@@ -172,9 +177,18 @@ function TemplateLaunchForm(props) {
         <Col style={{'maxWidth': 976}}>
         <Form className='mt-4' id='git-upload-form'>
             <Form.Group as={Row} controlId="formUrl">
-              <Form.Label column sm={3}>Repository URL:</Form.Label>
+              <Form.Label column sm={3}>Workflow Repository:</Form.Label>
               <Col sm={9}>
-                <Form.Control type="input" value={workflowUrl} onChange={(e) =>setWorkflowUrl(e.target.value)}/>
+              <Form.Row>
+                <Form.Group as={Col} sm="9" controlId="validationCustom01">
+                  <Form.Label style={{fontWeight: 400}}>URL</Form.Label>
+                  <Form.Control type="input" value={workflowUrl} onChange={(e) =>setWorkflowUrl(e.target.value)}/>
+                </Form.Group>
+                <Form.Group as={Col} sm="3" controlId="validationCustom02">
+                  <Form.Label style={{fontWeight: 400}}>Branch, tag or SHA</Form.Label>
+                  <Form.Control type="input" placeholder='master' value={workflowHash} onChange={(e) =>setWorkflowHash(e.target.value)}/>
+                </Form.Group>
+                </Form.Row>
                 {mode === "template" ? <div className="mt-2"><GoInfo color="green"/> Using <tt style={{fontSize: 16}}>template.json</tt>. You may edit values below before submitting or upload a new file.</div> : null}
                 {mode === "params" ? <div className="mt-2"><GoInfo color="green"/> Using <tt style={{fontSize: 16}}>params.json</tt>. You may edit values below before submitting or upload a new file.</div> : null}
                 {mode === "none" ? <div className="mt-2"><GoInfo color="orange"/> No parameter specification found. If needed, edit or upload appropriate params.json below before submitting.</div> : null}
