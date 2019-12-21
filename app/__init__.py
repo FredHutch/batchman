@@ -43,10 +43,11 @@ def create_app():
     ## API setup
     apis = flask_rest_api.Api(app)
     
-    from app.api import api, admin, user, logging
+    from app.api import api, admin, user, logging, actions
     apis.register_blueprint(api.WorkflowApi, url_prefix=app.config["API_PREFIX"])
     apis.register_blueprint(admin.AdminApi, url_prefix=app.config["API_PREFIX"])
     apis.register_blueprint(user.UserApi, url_prefix=app.config["API_PREFIX"])
     apis.register_blueprint(logging.LoggingApi, url_prefix=app.config["API_PREFIX"])
+    apis.register_blueprint(actions.ActionsApi, url_prefix=app.config["API_PREFIX"])
 
     return app
