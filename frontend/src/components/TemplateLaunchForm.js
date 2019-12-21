@@ -41,7 +41,7 @@ function TemplateLaunchForm(props) {
     const [resumeData, resumeDataIsLoading, resumeDataIsError] = useFetch("/api/v1/workflow");
     const [resumeSelection, setResumeSelection] = useState(null);
     // profile information
-    const [nextflowProfile, setNextflowProfile] = useState("aws");
+    const [nextflowProfile, setNextflowProfile] = useState();
     const [nextflowConfig, setNextflowConfig] = useState();
     // form fields + params
     const [workflowUrl, setWorkflowUrl] = useState("");
@@ -71,7 +71,7 @@ function TemplateLaunchForm(props) {
         Promise.all([
             fetch(`${rawUrl}/template.json`).then(handleError),
             fetch(`${rawUrl}/params.json`).then(handleError),
-            fetch(`${rawUrl}/nextflow.config`),
+            fetch(`${rawUrl}/nextflow.config`).then((r) => r.text()),
         ]).then(([templateRes, paramsRes, configRes]) => {
           if (templateRes){
             setTemplateSchema(templateRes)
@@ -82,7 +82,21 @@ function TemplateLaunchForm(props) {
           } else {
             setMode("none")
           }
-
+          // parse nextflow.config file
+          fetch("/api/v1/parse_nextflow_config", {
+            method: "POST",
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({nextflow_config: configRes})
+          })
+          .then(handleError)
+          .then(data => {
+            setNextflowConfig(data);
+            setNextflowProfile(data.valid_profiles[0])
+            console.log(data["errors"]);
+          })
         })
       } catch(err) {
         console.log(err)
@@ -137,6 +151,11 @@ function TemplateLaunchForm(props) {
         
     }
     const _handleSubmit = (params) => {
+        if (nextflowProfile == undefined){
+          setErrorMsg("Please specify a profile.")
+          return false;
+        }
+
         const payload = {
             git_url: workflowUrl,
             git_hash: workflowHash,
@@ -145,7 +164,6 @@ function TemplateLaunchForm(props) {
             resume_fargate_task_arn: resumeSelection || "",
             workgroup: userProfile.selectedWorkgroup.name
         }
-        //console.log(payload)
         fetch("/api/v1/workflow", {
             method: "POST",
             headers: {
@@ -168,6 +186,25 @@ function TemplateLaunchForm(props) {
         return false
       }
     }
+
+    var profile_selector;
+    if (nextflowConfig) {
+      if (nextflowConfig.valid_profiles.length > 0) {
+        profile_selector = (
+          <Form.Control as="select" value={nextflowProfile} onChange={(e) =>setNextflowProfile(e.target.value)}>
+            {nextflowConfig.valid_profiles.map(p => <option key={p}>{p}</option>)}
+          </Form.Control>
+        );
+      } else {
+        profile_selector = (
+          <Form.Control as="select" required={true} value={nextflowProfile} onChange={(e) =>setNextflowProfile(e.target.value)}>
+            <option value="" disabled selected>Please select a profile</option>
+            {Object.keys(nextflowConfig.config.profiles).map(p => <option key={p}>{p}</option>)}
+          </Form.Control>
+        );
+      }
+    }
+
     return (
         <Container fluid>
         <Row>
@@ -238,7 +275,7 @@ function TemplateLaunchForm(props) {
                 <Form.Group as={Row} controlId="formUrl">
                   <Form.Label column sm={3}>Nextflow Profile:</Form.Label>
                   <Col sm={9}>
-                    <Form.Control type="input" value={nextflowProfile} onChange={(e) =>setNextflowProfile(e.target.value)}/>
+                     {profile_selector}
                   </Col>
                 </Form.Group>
                 <Form.Group as={Row} controlId="formResumeSelection">
