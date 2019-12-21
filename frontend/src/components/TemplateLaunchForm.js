@@ -235,6 +235,19 @@ function TemplateLaunchForm(props) {
                 {mode === "none" ? <div className="mt-2"><GoInfo color="orange"/> No parameter specification found. If needed, edit or upload appropriate params.json below before submitting.</div> : null}
               </Col>
             </Form.Group>
+            {nextflowConfig && 
+              <Form.Group as={Row} controlId="info">
+                <Form.Label column sm={3}>Workflow Metadata:</Form.Label>
+                <Col sm={9}>
+                <Form.Row>
+                  {nextflowConfig.config.manifest
+                    ? <pre>{JSON.stringify(nextflowConfig.config.manifest || {}, undefined, 2)}</pre>
+                    : <div className="mt-2"><GoInfo color="orange"/> No manifest found.</div>
+                  }
+                </Form.Row>
+                </Col>
+              </Form.Group>
+            }
             {workflowUrl &&
               <div>
                 <Form.Group as={Row} controlId="parameters">
