@@ -75,8 +75,7 @@ export const S3Link = ({url}) => {
     const clipboard = useClipboard({copiedTimeout: 2000});
     try {
         if (url.startsWith('s3://')){
-            const p = url.endswith("/") ? "browse" : "file"
-            const target = `https://cloudfiles.labmed.uw.edu/${p}/${url.slice(5)}`
+            const target = `https://cloudfiles.labmed.uw.edu/browse/${url.slice(5)}`
             return (<>
                 <a href={target} target="_blank">{url}</a>
                 <GoClippy onClick={() => clipboard.copy(url)} className='copy-icon' />
