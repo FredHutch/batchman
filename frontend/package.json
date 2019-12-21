@@ -19,11 +19,14 @@
     "react-string-replace": "^0.4.4",
     "react-syntax-highlighter": "^11.0.2",
     "react-vega": "^7.0.1",
+    "svgo": "1.3.0",
+    "use-clipboard-copy": "^0.1.1",
     "vega": "^5.7.1",
-    "vega-lite": "^4.0.0-beta.9",
+    "vega-lite": "^4.0.0-beta.9"
+  },
+  "resolutions": {
     "svgo": "1.3.0"
   },
-  "resolutions": { "svgo": "1.3.0" },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

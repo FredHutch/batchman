@@ -86,3 +86,15 @@ div.searchresult > .key {
   word-break: break-all;
   white-space: pre-wrap;
 }
+
+svg.copy-icon {
+  position: relative;
+  top: -2px;
+  margin-left: 5px;
+  margin-right: 5px;
+  color: #666;
+  cursor: pointer;
+}
+svg.copy-icon:hover {
+  color: #007bff;
+}
