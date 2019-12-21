@@ -83,20 +83,23 @@ function TemplateLaunchForm(props) {
             setMode("none")
           }
           // parse nextflow.config file
-          fetch("/api/v1/parse_nextflow_config", {
-            method: "POST",
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({nextflow_config: configRes})
-          })
-          .then(handleError)
-          .then(data => {
-            setNextflowConfig(data);
-            setNextflowProfile(data.valid_profiles[0])
-            console.log(data["errors"]);
-          })
+          if (configRes){
+            fetch("/api/v1/parse_nextflow_config", {
+              method: "POST",
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({nextflow_config: configRes})
+            })
+            .then(handleError)
+            .then(data => {
+              setNextflowConfig(data);
+              setNextflowProfile(data.valid_profiles[0])
+              console.log(data["errors"]);
+            })
+            .catch(error => {console.log(error)})
+          }
         })
       } catch(err) {
         console.log(err)
