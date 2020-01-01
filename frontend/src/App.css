@@ -124,3 +124,16 @@ svg.copy-icon {
 svg.copy-icon:hover {
   color: #007bff;
 }
+
+.form-well {
+  margin-top: 25px;
+  padding: 10px
+}
+.form-well .well-title {
+  top: -23px;
+  position: relative;
+  background: white;
+  width: fit-content;
+  padding: 0 11px 0 8px;
+  margin-bottom: -10px;
+}

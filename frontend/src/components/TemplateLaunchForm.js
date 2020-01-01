@@ -14,6 +14,7 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
+import Card from "react-bootstrap/Card";
 import { GoLightBulb, GoZap, GoInfo } from 'react-icons/go';
 
 import "bootstrap/dist/css/bootstrap.css";
@@ -43,6 +44,7 @@ function TemplateLaunchForm(props) {
     // profile information
     const [nextflowProfile, setNextflowProfile] = useState();
     const [nextflowConfig, setNextflowConfig] = useState();
+    const [nextflowWorkDir, setNextflowWorkDir] = useState();
     // form fields + params
     const [workflowUrl, setWorkflowUrl] = useState("");
     const [workflowHash, setWorkflowHash] = useState("master");
@@ -95,8 +97,6 @@ function TemplateLaunchForm(props) {
             .then(handleError)
             .then(data => {
               setNextflowConfig(data);
-              setNextflowProfile(data.valid_profiles[0])
-              console.log(data["errors"]);
             })
             .catch(error => {console.log(error)})
           }
@@ -166,7 +166,8 @@ function TemplateLaunchForm(props) {
             nextflow_profile: nextflowProfile,
             nextflow_params: JSON.stringify(params, undefined, 2),
             resume_fargate_task_arn: resumeSelection || "",
-            workgroup: userProfile.selectedWorkgroup.name
+            workgroup: userProfile.selectedWorkgroup.name,
+            nextflow_workdir: nextflowWorkDir,
         }
         fetch("/api/v1/workflow", {
             method: "POST",
@@ -191,23 +192,20 @@ function TemplateLaunchForm(props) {
       }
     }
 
-    var profile_selector;
-    if (nextflowConfig) {
-      if (nextflowConfig.valid_profiles.length > 0) {
-        profile_selector = (
-          <Form.Control as="select" value={nextflowProfile} onChange={(e) =>setNextflowProfile(e.target.value)}>
-            {nextflowConfig.valid_profiles.map(p => <option key={p}>{p}</option>)}
-          </Form.Control>
-        );
-      } else {
-        profile_selector = (
-          <Form.Control as="select" required={true} value={nextflowProfile} onChange={(e) =>setNextflowProfile(e.target.value)}>
-            <option value="" disabled selected>Please select a profile</option>
-            {Object.keys(nextflowConfig.config.profiles).map(p => <option key={p}>{p}</option>)}
-          </Form.Control>
-        );
-      }
+    const _handleProfileSelect = (profile) => {
+        setNextflowProfile(profile);
+        const workDir = nextflowConfig.config.profiles[profile].workDir
+          || userProfile.selectedWorkgroup.default_work_dir
+        setNextflowWorkDir(workDir)
     }
+    
+    
+    const profile_selector = nextflowConfig 
+      ? (<Form.Control as="select" required={true} value={nextflowProfile} onChange={(e) =>_handleProfileSelect(e.target.value)}>
+          <option value="" disabled selected>Please select a profile</option>
+          {Object.keys(nextflowConfig.config.profiles).map(p => <option key={p}>{p}</option>)}
+        </Form.Control>)
+      : null;
 
     return (
         <Container fluid>
@@ -250,13 +248,15 @@ function TemplateLaunchForm(props) {
             }
             {workflowUrl &&
               <div>
+                <Card className='form-well'>
+                <Card.Title className='well-title'>Workflow Parameters</Card.Title>
                 <Form.Group as={Row} controlId="parameters">
                   <Form.Label column sm={3}>
                     Parameters:<br/>
                     {mode === "template" && <span style={{fontWeight: "400", fontStyle: "italic", color: "#999"}}>* indicates required field</span>}
                   </Form.Label>
                   <Col sm={9}>
-                    <Tabs defaultActiveKey={mode} id="params-tabs" transition={false} >
+                    <Tabs defaultActiveKey={mode} id="params-tabs" transition={false} className='mb-2'>
                       {mode === "template" && 
                         <Tab eventKey="template" title="Template" disabled={uploadParams !== null}>
                           <SchemaForm schema={templateSchema}
@@ -289,12 +289,27 @@ function TemplateLaunchForm(props) {
                     </Tabs>
                   </Col>
                 </Form.Group>
+                </Card>
+                <Card className='form-well'>
+                <Card.Title className='well-title'>Nextflow Options</Card.Title>
                 <Form.Group as={Row} controlId="formUrl">
-                  <Form.Label column sm={3}>Nextflow Profile:</Form.Label>
+                  <Form.Label column sm={3}>Profile:</Form.Label>
                   <Col sm={9}>
                      {profile_selector}
                   </Col>
                 </Form.Group>
+                {nextflowWorkDir
+                  ? <Form.Group as={Row} controlId="formUrl">
+                      <Form.Label column sm={3}>Work Directory <br/>(-work-dir):</Form.Label>
+                      <Col sm={9}>
+                        <Form.Control 
+                          type="input"
+                          value={nextflowWorkDir}
+                          onChange={(e) =>setNextflowWorkDir(e.target.value)}/>
+                      </Col>
+                    </Form.Group>
+                  : null
+                } 
                 <Form.Group as={Row} controlId="formResumeSelection">
                   <Form.Label column sm={3}>Resume from:</Form.Label>
                   <Col sm={9}>
@@ -308,6 +323,7 @@ function TemplateLaunchForm(props) {
                     />
                   </Col>
                 </Form.Group>
+                </Card>
                 <Form.Group>
                     <div style={{textAlign: "right"}}>
                       <Button size="lg" onClick={() => handleSubmit()}>Run Workflow <GoZap /></Button>
