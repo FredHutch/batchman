@@ -6,7 +6,8 @@ import { parse } from 'query-string';
 
 import { ProfileContext } from "../App.js";
 
-import { GoFile, GoGitBranch, GoBeaker } from 'react-icons/go';
+import { GoFile, GoGitBranch } from 'react-icons/go';
+import {IoMdColorWand} from 'react-icons/io'
 
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
@@ -17,7 +18,6 @@ import "bootstrap/dist/css/bootstrap.css";
 
 
 import EditorLaunchForm from "./EditorLaunchForm.js"
-import GitLaunchForm from "./GitLaunchForm.js"
 import TemplateLaunchForm from "./TemplateLaunchForm.js"
 
 const SubmitHome = (props) => {
@@ -38,8 +38,8 @@ const SubmitHome = (props) => {
                 </Card>
                 <Card className='bucket-card shadow-sm' as={Link} to='template'>
                   <Card.Body>
-                  <Card.Title><GoBeaker size="3em" style={{color: "#999"}}/></Card.Title>
-                    <Card.Title>URL & Template</Card.Title>
+                  <Card.Title><IoMdColorWand size="3em" style={{color: "#999"}}/></Card.Title>
+                    <Card.Title>Wizard</Card.Title>
                   </Card.Body>
                 </Card>     
                 </div> 
@@ -55,7 +55,6 @@ function SubmitView(props) {
         <Router>
           <SubmitHome path="/" />
           <EditorLaunchForm path="editor" />
-          <GitLaunchForm path="repository" />
           <TemplateLaunchForm path="template" />
         </Router>
         
