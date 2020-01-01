@@ -307,7 +307,7 @@ function WorkflowDetailView({ runArn }) {
                 </Button></>
             }
             {runData.launchMetadata.execution_type === "GIT_URL" &&
-                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit/repository?arn=${runData.fargateTaskArn}`)}>
+                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit/template?arn=${runData.fargateTaskArn}`)}>
                     Edit and Resubmit
                 </Button>
             }
