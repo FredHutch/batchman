@@ -1,6 +1,8 @@
 import React from "react";
 import Badge from 'react-bootstrap/Badge'
-import { GoDash, GoChevronUp, GoChevronDown } from 'react-icons/go';
+import { GoDash, GoChevronUp, GoChevronDown, GoClippy } from 'react-icons/go';
+import { useClipboard } from 'use-clipboard-copy';
+
 
 export const PrettyPrintJson = ({data}) => (
     <div><pre>
@@ -70,10 +72,15 @@ export const StatusDisplayBadge = ({aws_status, nf_status}) => {
 
 
 export const S3Link = ({url}) => {
+    const clipboard = useClipboard({copiedTimeout: 2000});
     try {
         if (url.startsWith('s3://')){
             const target = `https://cloudfiles.labmed.uw.edu/browse/${url.slice(5)}`
-            return <a href={target} target="_blank">{url}</a>
+            return (<>
+                <a href={target} target="_blank">{url}</a>
+                <GoClippy onClick={() => clipboard.copy(url)} className='copy-icon' />
+                {clipboard.copied ? 'Copied!' : null}
+            </>)
         } else {
             return url
         }

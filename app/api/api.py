@@ -32,6 +32,11 @@ class CreateWorkflowArgs(Schema):
     nextflow_arguments = fields.String(location="json")
     nextflow_workflow = fields.String(location="json")
     nextflow_config = fields.String(location="json")
+    nextflow_params = fields.String(location="json")
+    nextflow_profile = fields.String(location="json")
+    nextflow_workdir = fields.String(location="json")
+    git_url = fields.String(location="json")
+    git_hash = fields.String(location="json")
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
@@ -125,9 +130,15 @@ class WorkflowList(MethodView):
             else:
                 env = current_app.config["WORKGROUPS"][WORKGROUP]
 
-        # 1. If a workflow and config file was uploaded
+        nextflow_options = ["-with-trace"]
+        additional_env_vars = []
+        uuid_key = self._generate_key()
+        workflow_loc = None
+        config_loc = None
+        params_file_loc = None
+
         if ("nextflow_workflow" in args) and ("nextflow_config" in args):
-            uuid_key = self._generate_key()
+            # 1a. If a workflow and config file was uploaded    
             workflow_loc =  "%s/%s/%s/main.nf" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
             config_loc = "%s/%s/%s/nextflow.config" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
             try:
@@ -135,18 +146,40 @@ class WorkflowList(MethodView):
                 self._upload_to_s3(config_loc, args["nextflow_config"])
             except botocore.exceptions.ClientError:
                 return jsonify({"error": "unable to save scripts"}), 500
-        # elif
-        # -- GIT link provided. Probably pass to nf directly? 
-        # elif
-        # -- URL link; probably download and upload to s3 as above
+            execution_type = "FILES"
+            command = ["runner.sh", workflow_loc, config_loc]
+        elif ("git_url" in args):
+            # 1b. Or, if a git url is provided
+            execution_type = "GIT_URL"
+            if "git_hash" in args:
+                nextflow_options.append("-r " + args["git_hash"])
+            command = ["runner.sh", args["git_url"]]
+        elif ("s3_url" in args):
+            # 1c. Or, a s3 url
+            execution_type = "S3_URL"
+            command = ["runner.sh", args["s3_url"]]
         else:
             print(args)
             return jsonify({"error": "Invalid nextflow commands"}), 500
         
-        nextflow_options = ["-with-trace"]
+        if args.get("nextflow_params", "") != "":
+            # upload params_file to S3 if provided. Runner.sh downloads this.
+            params_file_loc = "%s/%s/%s/params.json" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
+            try:
+                self._upload_to_s3(params_file_loc, args["nextflow_params"])
+            except botocore.exceptions.ClientError:
+                return jsonify({"error": "unable to save params file."}), 500
+            nextflow_options.append("-params-file params.json")
+            additional_env_vars.append({"name": "NF_PARAMS_FILE", "value": params_file_loc})
+        
+        if args.get("nextflow_profile", "") != "":
+            nextflow_options.append("-profile " + args["nextflow_profile"])
+
+        if args.get("nextflow_workdir", "") != "":
+            nextflow_options.append("-work-dir " + args["nextflow_workdir"])
+
         if args.get("resume_fargate_task_arn", "") != "":
             # resume from prior nextflow execution
-            nextflow_options.append("-resume")
             resume_fargate_task_arn = args["resume_fargate_task_arn"]
             # ensure this arn was run as part of current group
             try:
@@ -156,6 +189,8 @@ class WorkflowList(MethodView):
                 abort(404)
             if w.workgroup != WORKGROUP:
                 return jsonify({"error": "You can only resume from workflows in the same workgroup"}), 401
+            nextflow_options.append("-resume")
+            additional_env_vars.append({"name": "NF_SESSION_CACHE_ARN", "value": resume_fargate_task_arn})
         else:
             resume_fargate_task_arn = ""
 
@@ -168,8 +203,12 @@ class WorkflowList(MethodView):
                     "containerOverrides": [
                         {
                             "name": "nextflow",
-                            "command": ["runner.sh", workflow_loc, config_loc],
+                            "command": command,
                             "environment": [
+                                {
+                                    "name": "EXECUTION_TYPE",
+                                    "value": execution_type
+                                },
                                 {
                                     "name": "API_ENDPOINT",
                                     "value": current_app.config["API_ENDPOINT"]
@@ -186,10 +225,7 @@ class WorkflowList(MethodView):
                                     "name": "NF_SESSION_CACHE_DIR",
                                     "value": env["NEXTFLOW_S3_SESSION_CACHE"]
                                 },
-                                {
-                                    "name": "NF_SESSION_CACHE_ARN",
-                                    "value": resume_fargate_task_arn
-                                },
+                                *additional_env_vars
                             ],
                         }
                     ]
@@ -202,14 +238,23 @@ class WorkflowList(MethodView):
                     },
                 },
             )
-        except botocore.exceptions.ClientError:
-            return jsonify({"error": "unable to launch job"}), 500
+        except botocore.exceptions.ClientError as e:
+            return jsonify({"error": "unable to launch job", "msg": e}), 500
 
         taskArn = res['tasks'][0]['taskArn'].split(":task/")[1]
         # save to database -- must serialize the date to string first
         infoJson = res['tasks'][0].copy()
         infoJson['createdAt'] = str(infoJson['createdAt'])
-
+        launchMetadataJson = {
+            "execution_type": execution_type, # FILES | GIT_URL
+            "execution_source": "WEB", # TODO: could be lambda, api, etc?
+            "git_url": args.get("git_url", None),
+            "git_hash": args.get("git_hash", None),
+            "nextflow_profile": args.get("nextflow_profile", None),
+            "params_loc": params_file_loc,
+            "workflow_loc": workflow_loc,
+            "config_loc": config_loc,
+        }
         e = WorkflowExecution(
             fargateTaskArn=taskArn,
             fargateCreatedAt=res['tasks'][0]['createdAt'],
@@ -220,6 +265,7 @@ class WorkflowList(MethodView):
             cacheTaskArn=resume_fargate_task_arn,
             username=get_jwt_identity(),
             workgroup=WORKGROUP,
+            launchMetadata=launchMetadataJson,
         )
         db.session.add(e)
         db.session.commit()
@@ -305,6 +351,7 @@ class WorkflowTasks(MethodView):
 
 @WorkflowApi.route('/workflow/<string:id>/script')
 @WorkflowApi.route('/workflow/<string:id>/config')
+@WorkflowApi.route('/workflow/<string:id>/params')
 class WorkflowScriptFile(MethodView):
     @validate_workgroup()
     def get(self, id):
@@ -314,9 +361,11 @@ class WorkflowScriptFile(MethodView):
             db_res = db.session.query(WorkflowExecution)\
                 .filter(WorkflowExecution.fargateTaskArn==id).one()
             if FILE == "script":
-                s3_url = db_res.fargateMetadata["detail"]["overrides"]["containerOverrides"][0]["command"][1]
+                s3_url = db_res.launchMetadata["workflow_loc"]
             elif FILE == "config":
-                s3_url = db_res.fargateMetadata["detail"]["overrides"]["containerOverrides"][0]["command"][2]
+                s3_url = db_res.launchMetadata["config_loc"]
+            elif FILE == "params":
+                s3_url = db_res.launchMetadata["params_loc"]
             else:
                 abort(500)
         except sqlalchemy.orm.exc.NoResultFound:

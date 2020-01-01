@@ -187,6 +187,10 @@ function WorkflowDetailView({ runArn }) {
         runData.nextflowMetadata = {workflow: {manifest: {}}};
         runData.info = {};
     }
+
+    if (runData.launchMetadata == null){
+        runData.launchMetadata = {}
+    }
     
     const runTime = runData.nextflowWorkflowEndDateTime
             ? timeConversion(Date.parse(runData.nextflowWorkflowEndDateTime) - Date.parse(runData.fargateCreatedAt))
@@ -238,12 +242,25 @@ function WorkflowDetailView({ runArn }) {
                     <Col>
                         <LabeledValue label="Workgroup" value={runData.workgroup || NA_STRING} />
                     </Col>
+                    <Col>
+                        <LabeledValue label="Launch Type" value={runData.launchMetadata.execution_type || "unknown"} />
+                    </Col>
                 </Row>
                 <Row>
                     <Col>
                         <LabeledValue label="Nextflow Command" value={runData.nextflowMetadata.workflow.commandLine || NA_STRING} />
                     </Col>
                 </Row>
+                {runData.launchMetadata.execution_type === "GIT_URL" && 
+                    (<Row>
+                        <Col>
+                            <LabeledValue label="Repository" value={runData.launchMetadata.git_url || NA_STRING} />
+                        </Col>
+                        <Col>
+                            <LabeledValue label="SHA" value={runData.launchMetadata.git_hash || NA_STRING} />
+                        </Col>
+                    </Row>)
+                }
                 <Row>
                     <Col>
                         <LabeledValue label="Work Directory" value={runData.nextflowMetadata.workflow.workDir || NA_STRING} />
@@ -256,7 +273,15 @@ function WorkflowDetailView({ runArn }) {
                         : <LabeledValue label="Workflow Parameters" value={NA_STRING} />
                     }
                     </Col>
-                </Row></div>)
+                </Row>
+                {runData.launchMetadata.params_loc !== undefined &&
+                    (<Row>
+                        <Col>
+                            <LabeledValue label="Params.json" value={runData.launchMetadata.params_loc || NA_STRING} />
+                        </Col>
+                    </Row>)
+                }
+                </div>)
             : <PrettyPrintJson data={runData} />
             }
             </div>
@@ -273,12 +298,19 @@ function WorkflowDetailView({ runArn }) {
             <Button variant="outline-primary" style={{width: "100%"}} onClick={() => setNextflowModalData({workflowTaskArn: runData.fargateTaskArn})} >
                 View Nextflow Logs
             </Button>
-            <Button variant="outline-primary mt-3" style={{width: "100%"}} onClick={() => setNextflowScriptModalData({workflowTaskArn: runData.fargateTaskArn})} >
-                View Script and Config Files
-            </Button>
-            <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit?arn=${runData.fargateTaskArn}`)}>
-                Edit and Resubmit
-            </Button>
+            {runData.launchMetadata.execution_type === "FILES" && <>
+                <Button variant="outline-primary mt-3" style={{width: "100%"}} onClick={() => setNextflowScriptModalData({workflowTaskArn: runData.fargateTaskArn})} >
+                    View Script and Config Files
+                </Button>
+                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit/editor?arn=${runData.fargateTaskArn}`)}>
+                    Edit and Resubmit
+                </Button></>
+            }
+            {runData.launchMetadata.execution_type === "GIT_URL" &&
+                <Button variant="outline-secondary mt-3" style={{width: "100%"}} onClick={() => navigate(`/submit/template?arn=${runData.fargateTaskArn}`)}>
+                    Edit and Resubmit
+                </Button>
+            }
             <StopWorkflowButton 
                 aws_status={runData.fargateLastStatus}
                 nf_status={runData.nextflowLastEvent}
