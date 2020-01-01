@@ -34,6 +34,7 @@ class CreateWorkflowArgs(Schema):
     nextflow_config = fields.String(location="json")
     nextflow_params = fields.String(location="json")
     nextflow_profile = fields.String(location="json")
+    nextflow_workdir = fields.String(location="json")
     git_url = fields.String(location="json")
     git_hash = fields.String(location="json")
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
@@ -173,6 +174,9 @@ class WorkflowList(MethodView):
         
         if args.get("nextflow_profile", "") != "":
             nextflow_options.append("-profile " + args["nextflow_profile"])
+
+        if args.get("nextflow_workdir", "") != "":
+            nextflow_options.append("-work-dir " + args["nextflow_workdir"])
 
         if args.get("resume_fargate_task_arn", "") != "":
             # resume from prior nextflow execution

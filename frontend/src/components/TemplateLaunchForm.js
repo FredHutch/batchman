@@ -107,19 +107,21 @@ function TemplateLaunchForm(props) {
     }, [workflowUrl, workflowHash])
 
 
- 
     const {arn} = parse(props.location.search);
+
     useEffect(
         // fill in form if prior arn is passed in via query
-        (arn) => {
+        () => {
+          console.log(`ARN to restore from is ${arn}`)
           if (arn !== undefined){
-              fetch(`/api/v1/workflow/${arn}`)
+              fetch(`/api/v1/workflow/${arn}`)  
                 .then(handleError)
                 .then(data => {
                     setWorkflowUrl(data.launchMetadata.git_url)
                     setWorkflowHash(data.launchMetadata.git_hash)
                     setNextflowProfile(data.launchMetadata.nextflow_profile)
                     setResumeSelection(arn)
+                    setNextflowWorkDir(data.nextflowMetadata.workflow.workDir)
                 })
                 .catch(error => {console.log(error)})
               fetch(`/api/v1/workflow/${arn}/params`)
@@ -127,13 +129,13 @@ function TemplateLaunchForm(props) {
                 .then(data => {
                     if (data.contents !== undefined){
                       setMode("params")
-                      setJsonParams(data.contents)
+                      setJsonParams(JSON.parse(data.contents))
                     }
                 })
                 .catch(error => {console.log(error)})
           }
         },
-        [props.arn]
+        [arn]
     )
 
     const handleSubmit = () => {
@@ -319,7 +321,6 @@ function TemplateLaunchForm(props) {
                         resumeSelection={resumeSelection}
                         setResumeSelection={setResumeSelection}
                         dropup={false}
-                        bsSize="medium"
                     />
                   </Col>
                 </Form.Group>
