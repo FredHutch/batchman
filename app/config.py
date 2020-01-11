@@ -35,6 +35,7 @@ class Config(object):
             NEXTFLOW_S3_SCRIPTS = 's3://uwlm-nextflow-data/scripts/ngs',
             NEXTFLOW_S3_WORK_DIR = 's3://uwlm-nextflow-data/workdir/ngs',
             NEXTFLOW_S3_SESSION_CACHE = 's3://uwlm-nextflow-data/session_data/ngs',
+            NEXTFLOW_DEFAULT_PROFILE = "uw_batch",
             API_KEY = os.environ.get('API_KEY') or get_api_key(),
             IAM_TASK_ROLE_ARN = "arn:aws:iam::721970950229:role/nextflow-fargate-runner-role",
         ),
@@ -45,6 +46,7 @@ class Config(object):
             NEXTFLOW_S3_SCRIPTS = 's3://uwlm-nextflow-data/scripts/molmicro',
             NEXTFLOW_S3_WORK_DIR = 's3://uwlm-nextflow-data/workdir/molmicro',
             NEXTFLOW_S3_SESSION_CACHE = 's3://uwlm-nextflow-data/session_data/molmicro',
+            NEXTFLOW_DEFAULT_PROFILE = "batchman",
             API_KEY = os.environ.get('API_KEY') or get_api_key(),
             IAM_TASK_ROLE_ARN = "arn:aws:iam::721970950229:role/nextflow-fargate-runner-role",
         )

@@ -42,7 +42,7 @@ function TemplateLaunchForm(props) {
     const [resumeData, resumeDataIsLoading, resumeDataIsError] = useFetch("/api/v1/workflow");
     const [resumeSelection, setResumeSelection] = useState(null);
     // profile information
-    const [nextflowProfile, setNextflowProfile] = useState();
+    const [nextflowProfile, setNextflowProfile] = useState(null);
     const [nextflowConfig, setNextflowConfig] = useState();
     const [nextflowWorkDir, setNextflowWorkDir] = useState();
     // form fields + params
@@ -97,6 +97,12 @@ function TemplateLaunchForm(props) {
             .then(handleError)
             .then(data => {
               setNextflowConfig(data);
+              // set the profile selector to the workgroup profile, if exists
+              const profile_list = Object.keys(data.config.profiles);
+              const default_workgroup_profile = userProfile.selectedWorkgroup.default_profile
+              if (profile_list.indexOf(default_workgroup_profile) > -1){
+                setNextflowProfile(default_workgroup_profile)
+              }
             })
             .catch(error => {console.log(error)})
           }
@@ -104,7 +110,7 @@ function TemplateLaunchForm(props) {
       } catch(err) {
         console.log(err)
       }
-    }, [workflowUrl, workflowHash])
+    }, [workflowUrl, workflowHash, userProfile])
 
 
     const {arn} = parse(props.location.search);
@@ -203,9 +209,9 @@ function TemplateLaunchForm(props) {
     
     
     const profile_selector = nextflowConfig 
-      ? (<Form.Control as="select" required={true} value={nextflowProfile} onChange={(e) =>_handleProfileSelect(e.target.value)}>
-          <option value="" disabled selected>Please select a profile</option>
-          {Object.keys(nextflowConfig.config.profiles).map(p => <option key={p}>{p}</option>)}
+      ? (<Form.Control as="select" required={true} value={nextflowProfile || "___disabled___"} onChange={(e) =>_handleProfileSelect(e.target.value)}>
+          <option value="___disabled___" disabled>Please select a profile</option>
+          {Object.keys(nextflowConfig.config.profiles).map(p => <option key={p} value={p}>{p} {p == userProfile.selectedWorkgroup.default_profile ? "(Workgroup Default)" : null}</option>)}
         </Form.Control>)
       : null;
 

@@ -21,6 +21,7 @@ class Profile(MethodView):
             "display_name": current_app.config["WORKGROUPS"][g].get("DISPLAY_NAME", g), 
             "name": g,
             "default_work_dir": current_app.config["WORKGROUPS"][g].get("NEXTFLOW_S3_WORK_DIR", ""), 
+            "default_profile": current_app.config["WORKGROUPS"][g].get("NEXTFLOW_DEFAULT_PROFILE", ""), 
         }, intersection)
         return jsonify({
             "username": get_jwt_identity(),
