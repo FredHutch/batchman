@@ -68,6 +68,10 @@ div.vega-embed details {
   display: none;
 }
 
+div.toolbar .btn-group {
+  padding-left: 30px;
+}
+
 div.toolbar .mini-button-group {
     font-size: 12px;
     height: 20px;

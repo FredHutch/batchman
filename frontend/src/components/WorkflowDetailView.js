@@ -174,12 +174,13 @@ function WorkflowDetailView({ runArn }) {
     const [nextflowModalData, setNextflowModalData] = useState(false);
     const [nextflowScriptData, setNextflowScriptModalData] = useState(false);
     const [summaryViewSetting, setSummaryViewSetting] = useState("summary"); // "summary" | "json"
+    const [autoRefreshSetting, setAutoRefreshSetting] = useState(true); // true (on) | false (off)
     
     // auto-refresh data
     useInterval(() => {
         runQuery();
         taskQuery();
-    }, 15000)
+    }, autoRefreshSetting ? 15000 : null)
 
     if (runDataIsLoading || taskDataIsLoading) {
         if (!runData || !taskData){ 
@@ -214,6 +215,10 @@ function WorkflowDetailView({ runArn }) {
                 <ToggleButtonGroup type="radio" value={summaryViewSetting} onChange={setSummaryViewSetting} name="summaryViewSettingToggle">
                   <ToggleButton className='mini-button-group' variant="outline-secondary" size="sm" value="summary">Summary</ToggleButton>
                   <ToggleButton className='mini-button-group' variant="outline-secondary" size="sm" value="json">JSON</ToggleButton>
+                </ToggleButtonGroup>
+                <ToggleButtonGroup type="radio" value={autoRefreshSetting} onChange={setAutoRefreshSetting} name="autoRefreshSettingToggle">
+                  <ToggleButton className='mini-button-group' variant="outline-secondary" size="sm" value={true}>Auto-refresh On</ToggleButton>
+                  <ToggleButton className='mini-button-group' variant="outline-secondary" size="sm" value={false}>Off</ToggleButton>
                 </ToggleButtonGroup>
             </div>
         <Row>
