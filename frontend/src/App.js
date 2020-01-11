@@ -53,7 +53,7 @@ class App extends React.Component {
         <Router>
           <WorkflowListView path="/workflows" default/>
           <WorkflowDetailView path="/workflows/:runArn" />
-          <SubmitView path="/submit" />
+          <SubmitView path="/submit/*" />
         </Router>
       </div>
     </ProfileContext.Provider>

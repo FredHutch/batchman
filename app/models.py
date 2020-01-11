@@ -24,8 +24,11 @@ class WorkflowExecution(db.Model):
     nextflowExitStatus = db.Column(db.String())    
     nextflowIsSuccess = db.Column(db.Boolean())
     # these fields record user/batchman data
-    username = db.Column(db.String()) # the UW NetId of the submitting user
+    username = db.Column(db.String()) # the UW NetId of the submitting user; may be blank if submitted via API
     workgroup = db.Column(db.String()) # the resource group used to submit the workflow
+    launchMetadata = db.Column(MutableDict.as_mutable(JSON)) # added with launch; contains execution type, 
+                                                             # launching agent (web, lambda), file locations, 
+                                                             # profile names, etc.
 
 class WorkflowExecutionSchema(ModelSchema):
     class Meta:
