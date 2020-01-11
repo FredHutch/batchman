@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from 'react-fetching-library';
-import { useLocalStorage } from '../hooks.js';
+import { useLocalStorage, useInterval } from '../hooks.js';
 
 import { Link, navigate } from '@reach/router'
 
@@ -168,16 +168,24 @@ const StopWorkflowButton = ({aws_status, nf_status, workflow_arn}) => {
 
 function WorkflowDetailView({ runArn }) {
     document.title = "Workflow Detail"
-    const { loading: runDataIsLoading, payload: runData, error: runDataisError } = useQuery({endpoint: `/api/v1/workflow/${runArn}`, method: 'GET'});
-    const { loading: taskDataIsLoading, payload: taskData, error: taskDataisError } = useQuery({endpoint: `/api/v1/workflow/${runArn}/tasks`, method: 'GET'});
-
+    const { loading: runDataIsLoading, payload: runData, error: runDataisError, query: runQuery } = useQuery({endpoint: `/api/v1/workflow/${runArn}`, method: 'GET'});
+    const { loading: taskDataIsLoading, payload: taskData, error: taskDataisError, query: taskQuery } = useQuery({endpoint: `/api/v1/workflow/${runArn}/tasks`, method: 'GET'});
     const [taskModalData, setTaskModalData] = useState(false);
     const [nextflowModalData, setNextflowModalData] = useState(false);
     const [nextflowScriptData, setNextflowScriptModalData] = useState(false);
     const [summaryViewSetting, setSummaryViewSetting] = useState("summary"); // "summary" | "json"
     
+    // auto-refresh data
+    useInterval(() => {
+        runQuery();
+        taskQuery();
+    }, 15000)
+
     if (runDataIsLoading || taskDataIsLoading) {
-        return <div>Loading</div>
+        if (!runData || !taskData){ 
+            // only display loading state if no data exists
+            return <div>Loading</div>
+        }
     }
     if (runDataisError || taskDataisError) {
         return <div>Error</div>
