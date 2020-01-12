@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from 'react-fetching-library';
-import { useLocalStorage } from '../hooks.js';
+import { useLocalStorage, useInterval } from '../hooks.js';
 
 import { Link, navigate } from '@reach/router'
 
@@ -166,18 +166,52 @@ const StopWorkflowButton = ({aws_status, nf_status, workflow_arn}) => {
     }
 }
 
+const ProgressBar = ({onDone, isActive}) => {
+    const [progressPercentage, setProgressPercentage] = useState(100); 
+    useInterval(() => {
+        // will refresh every 30 seconds
+        setProgressPercentage(progressPercentage - 1)
+        if (progressPercentage <= 0){
+            onDone()
+            setProgressPercentage(100)
+        }
+    }, isActive ? 300 : null)
+
+    return (
+        <span 
+          style={{
+            width: `${progressPercentage}%`, 
+            visibility: isActive ? "visible" : "hidden"}} 
+          className='progress' />
+        )
+}
+
 function WorkflowDetailView({ runArn }) {
     document.title = "Workflow Detail"
-    const { loading: runDataIsLoading, payload: runData, error: runDataisError } = useQuery({endpoint: `/api/v1/workflow/${runArn}`, method: 'GET'});
-    const { loading: taskDataIsLoading, payload: taskData, error: taskDataisError } = useQuery({endpoint: `/api/v1/workflow/${runArn}/tasks`, method: 'GET'});
-
+    const { loading: runDataIsLoading, payload: runData, error: runDataisError, query: doRunQuery } = useQuery({endpoint: `/api/v1/workflow/${runArn}`, method: 'GET'});
+    const { loading: taskDataIsLoading, payload: taskData, error: taskDataisError, query: doTaskQuery } = useQuery({endpoint: `/api/v1/workflow/${runArn}/tasks`, method: 'GET'});
     const [taskModalData, setTaskModalData] = useState(false);
     const [nextflowModalData, setNextflowModalData] = useState(false);
     const [nextflowScriptData, setNextflowScriptModalData] = useState(false);
     const [summaryViewSetting, setSummaryViewSetting] = useState("summary"); // "summary" | "json"
-    
+
+    // state used to track auto-refresh
+    const [autoRefreshSetting, setAutoRefreshSetting] = useState(null); // true (on) | false (off)
+    const handleRefresh = () => {
+        // fetch new data when ProgressBar triggers
+        doRunQuery()
+        doTaskQuery()
+    }
+    useEffect(() => {
+        // only turn on autorefresh for not-yet-completed workflows
+        setAutoRefreshSetting(runData && (runData.nextflowWorkflowEndDateTime == null))
+    }, [runData])
+
     if (runDataIsLoading || taskDataIsLoading) {
-        return <div>Loading</div>
+        if (!runData || !taskData){ 
+            // only display loading state if no data exists
+            return <div>Loading</div>
+        }
     }
     if (runDataisError || taskDataisError) {
         return <div>Error</div>
@@ -206,6 +240,10 @@ function WorkflowDetailView({ runArn }) {
                 <ToggleButtonGroup type="radio" value={summaryViewSetting} onChange={setSummaryViewSetting} name="summaryViewSettingToggle">
                   <ToggleButton className='mini-button-group' variant="outline-secondary" size="sm" value="summary">Summary</ToggleButton>
                   <ToggleButton className='mini-button-group' variant="outline-secondary" size="sm" value="json">JSON</ToggleButton>
+                </ToggleButtonGroup>
+                <ToggleButtonGroup type="radio" value={autoRefreshSetting} onChange={setAutoRefreshSetting} name="autoRefreshSettingToggle">
+                  <ToggleButton className='mini-button-group progress-container' variant="outline-secondary" size="sm" value={true}>Auto-refresh On<ProgressBar isActive={autoRefreshSetting} onDone={handleRefresh} /></ToggleButton>
+                  <ToggleButton className='mini-button-group' variant="outline-secondary" size="sm" value={false}>Off</ToggleButton>
                 </ToggleButtonGroup>
             </div>
         <Row>
