@@ -169,13 +169,13 @@ const StopWorkflowButton = ({aws_status, nf_status, workflow_arn}) => {
 const ProgressBar = ({onDone, isActive}) => {
     const [progressPercentage, setProgressPercentage] = useState(100); 
     useInterval(() => {
-        // will refresh every 10 seconds
+        // will refresh every 30 seconds
         setProgressPercentage(progressPercentage - 1)
         if (progressPercentage <= 0){
             onDone()
             setProgressPercentage(100)
         }
-    }, isActive ? 100 : null)
+    }, isActive ? 300 : null)
 
     return (
         <span 
