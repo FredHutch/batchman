@@ -23,37 +23,41 @@ class Config(object):
     API_PREFIX = '/api/v1'
     
     # configure api
-    API_ENDPOINT = "http://batchman.labmed.internal"
-    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:5'
+    # API_ENDPOINT = "http://batchman.labmed.internal"
+    API_ENDPOINT = "http://callaciseu.holepunch.io"
+    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:2'
 
     # SAML group <> resource mapping; keys correspond to ELMIRA groups.
     WORKGROUPS = {
         "u_labmed_dg_ngs-users": dict(
             DISPLAY_NAME = "NGS Analytics",
-            ECS_CLUSTER = 'AWSBatchComputeEnvironm-35edb5d3a487f6a_Batch_140a491a-5b89-353a-9e6b-16c60015291a',
-            ECS_SUBNETS = ["subnet-089bdabca179ab23f"],
-            NEXTFLOW_S3_SCRIPTS = 's3://uwlm-nextflow-data/scripts/ngs',
-            NEXTFLOW_S3_WORK_DIR = 's3://uwlm-nextflow-data/workdir/ngs',
-            NEXTFLOW_S3_SESSION_CACHE = 's3://uwlm-nextflow-data/session_data/ngs',
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-d4faaf96c22c48e_Batch_2e857809-78e4-355e-a34b-5e46bf37a749',
+            ECS_SUBNETS = ["subnet-00ac5a63e10167776"],
+            NEXTFLOW_S3_SCRIPTS = 's3://fredhutch-nextflow-data/scripts/ngs',
+            NEXTFLOW_S3_WORK_DIR = 's3://fredhutch-nextflow-data/workdir/ngs',
+            NEXTFLOW_S3_SESSION_CACHE = 's3://fredhutch-nextflow-data/session_data/ngs',
             NEXTFLOW_DEFAULT_PROFILE = "uw_batch",
             API_KEY = os.environ.get('API_KEY') or get_api_key(),
-            IAM_TASK_ROLE_ARN = "arn:aws:iam::721970950229:role/nextflow-fargate-runner-role",
+            IAM_TASK_ROLE_ARN = "arn:aws:iam::431561177764:role/nextflow-fargate-runner-role",
         ),
         "u_labmed_dg_molmicro": dict(
             DISPLAY_NAME = "Mol Micro",
-            ECS_CLUSTER = 'AWSBatchComputeEnvironm-389d556fb4abb35_Batch_471fd548-1a2e-34ba-b9a9-5a9f5f0c1967',
-            ECS_SUBNETS = ["subnet-089bdabca179ab23f"],
-            NEXTFLOW_S3_SCRIPTS = 's3://uwlm-nextflow-data/scripts/molmicro',
-            NEXTFLOW_S3_WORK_DIR = 's3://uwlm-nextflow-data/workdir/molmicro',
-            NEXTFLOW_S3_SESSION_CACHE = 's3://uwlm-nextflow-data/session_data/molmicro',
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-85ec7c556398afa_Batch_34cd0b72-26b1-3ca0-b789-5d850371d58a',
+            ECS_SUBNETS = ["subnet-00ac5a63e10167776"],
+            NEXTFLOW_S3_SCRIPTS = 's3://fredhutch-nextflow-data/scripts/molmicro',
+            NEXTFLOW_S3_WORK_DIR = 's3://fredhutch-nextflow-data/workdir/molmicro',
+            NEXTFLOW_S3_SESSION_CACHE = 's3://fredhutch-nextflow-data/session_data/molmicro',
             NEXTFLOW_DEFAULT_PROFILE = "batchman",
             API_KEY = os.environ.get('API_KEY') or get_api_key(),
-            IAM_TASK_ROLE_ARN = "arn:aws:iam::721970950229:role/nextflow-fargate-runner-role",
+            IAM_TASK_ROLE_ARN = "arn:aws:iam::431561177764:role/nextflow-fargate-runner-role",
         )
     }
 
 class ProductionConfig(Config):
-    AUTH_METHOD = 'SAML'
+    # AUTH_METHOD = 'SAML'
+    AUTH_METHOD = 'MOCK'
+    MOCK_USERNAME = 'nkrumm'
+    MOCK_GROUPS = ['u_labmed_dg_ngs-users', 'u_labmed_dg_molmicro']
 
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI= "postgresql://@127.0.0.1/batchman"

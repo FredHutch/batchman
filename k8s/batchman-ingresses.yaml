@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: batchman-ingress1
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+
+    # type of authentication
+    nginx.ingress.kubernetes.io/auth-type: basic
+    # name of the secret that contains the user/password definitions
+    nginx.ingress.kubernetes.io/auth-secret: batchman-auth
+    # message to display with an appropriate context why the authentication is required
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - test'
+
+spec:
+  rules:
+  - host: batchman-dev.fredhutch.org
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: batchman-service
+          servicePort: 8000
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: batchman-ingress2
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+
+
+spec:
+  rules:
+  - host: batchman-dev.fredhutch.org
+    http:
+      paths:
+      - path: /api/v1/ecslog
+        backend:
+          serviceName: batchman-service
+          servicePort: 8000

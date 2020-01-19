@@ -1,0 +1,30 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: batchman-app
+  labels:
+    app: batchman
+spec:
+  containers:
+    - name: batchman-app
+      image: fredhutch/batchman
+      env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: batchman-secrets
+              key: DATABASE_URL
+      command: ["/start.sh"]
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: batchman-service
+spec:
+  selector:
+    app: batchman
+  ports:
+    - port: 8000 # Default port for image
+
