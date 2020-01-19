@@ -24,7 +24,7 @@ class Config(object):
     
     # configure api
     # API_ENDPOINT = "http://batchman.labmed.internal"
-    API_ENDPOINT = "http://callaciseu.holepunch.io"
+    API_ENDPOINT = "https://batchman-dev.fredhutch.org"
     NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:2'
 
     # SAML group <> resource mapping; keys correspond to ELMIRA groups.
