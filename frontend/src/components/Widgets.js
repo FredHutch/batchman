@@ -82,10 +82,10 @@ export const S3Link = ({url}) => {
                 {clipboard.copied ? 'Copied!' : null}
             </>)
         } else {
-            return url
+            return url.toString()
         }
     } catch(error) {
-        return url
+        return url.toString()
     }
 }
 
