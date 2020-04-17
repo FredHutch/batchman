@@ -359,8 +359,8 @@ function WorkflowDetailView({ runArn }) {
         { runData.nextflowMetadata.workflow.errorReport
             ? (
                 <Row><Col md='7' sm="12"><Alert variant="danger">
-                    <LabeledValue label="Exit Code" value={<pre>{runData.nextflowMetadata.workflow.exitStatus}</pre>} />
-                    <LabeledValue label="Error" value={<pre>{runData.nextflowMetadata.workflow.errorReport}</pre>} />
+                    <LabeledValue label="Exit Code" value={runData.nextflowMetadata.workflow.exitStatus} />
+                    <LabeledValue label="Error" value={runData.nextflowMetadata.workflow.errorReport} />
                 </Alert></Col></Row>
             ) : null
         }

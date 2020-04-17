@@ -10,20 +10,48 @@ export const PrettyPrintJson = ({data}) => (
     </pre></div>
 );
 
-export const LabeledValue = ({label, value, inline, ...props}) => (
-    <div className='labeled-value' style={inline ? {display: "inline-block"} : {}} {...props}>
+const parseValue = (value) => {
+    var contents;
+    if (typeof(value) === "string"){
+        if (value.startsWith("s3://")){
+            contents = <S3Link url={value} />
+        } else {
+            contents = <span>{value}</span>
+        }
+    } else if (React.isValidElement(value)) {
+        contents = value
+    } else if (typeof(value) === "object") {
+        contents = <PrettyPrintJson data={value} />
+    } else {
+        try {
+            contents = String(value)    
+        } catch {
+            contents = <span>Value cannot be displayed</span>
+        }
+    }
+    return contents;
+}
+
+export const LabeledValue = ({label, value, inline, ...props}) => {
+    return (<div className='labeled-value' style={inline ? {display: "inline-block"} : {}} {...props}>
         <div className='label'>{label}</div>
-        <div className='value'><pre><S3Link url={value} /></pre></div>
-    </div>
-)
+        <div className='value'>
+            <pre>
+            {parseValue(value)}
+            </pre>
+        </div>
+    </div>);
+}
 
 export const LabeledValueList = ({label, values, ...props}) => (
     <div className='labeled-value' {...props}>
         <div className='label'>{label}</div>
         <table className='label-list'>
-            {Object.keys(values).map((key) => 
-                <tr><td className='label'>{key}</td><td className='value'><S3Link url={values[key]} /></td></tr>
+        <tbody>
+            {Object.keys(values).map((key, ix) => 
+                <tr key={ix}><td className='label'>{key}</td><td className='value'>{parseValue(values[key])}</td></tr>
             )}
+        </tbody>
         </table>
     </div>
 )
