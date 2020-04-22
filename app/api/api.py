@@ -131,10 +131,12 @@ class WorkflowList(MethodView):
                 return jsonify({"error": "User is not part of group"}), 401
             else:
                 env = current_app.config["WORKGROUPS"][WORKGROUP]
+                username = get_jwt_identity()
         elif validate_api_key(args.get("api_key")):
             # headless or API-driven launch
             WORKGROUP = get_workgroup_from_api_key(args["api_key"])
             env = current_app.config["WORKGROUPS"][WORKGROUP]
+            username = "API"
         else:
             return jsonify({"error": "Must specify a valid workgroup or api_key in POST"}), 500
             
@@ -272,7 +274,7 @@ class WorkflowList(MethodView):
             fargateLogGroupName='/ecs/nextflow-runner',
             fargateLogStreamName='ecs/nextflow/%s' % taskArn,
             cacheTaskArn=resume_fargate_task_arn,
-            username=get_jwt_identity(),
+            username=username,
             workgroup=WORKGROUP,
             launchMetadata=launchMetadataJson,
         )
