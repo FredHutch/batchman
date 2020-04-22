@@ -134,7 +134,7 @@ class WorkflowList(MethodView):
         elif validate_api_key(args.get("api_key")):
             # headless or API-driven launch
             WORKGROUP = get_workgroup_from_api_key(args["api_key"])
-            env = current_app.config["WORKGROUP"][WORKGROUP]
+            env = current_app.config["WORKGROUPS"][WORKGROUP]
         else:
             return jsonify({"error": "Must specify a valid workgroup or api_key in POST"}), 500
             
