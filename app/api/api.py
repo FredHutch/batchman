@@ -42,7 +42,8 @@ class CreateWorkflowArgs(Schema):
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
-    workgroup = fields.String(location="json", required=True)
+    workgroup = fields.String(location="json")
+    api_key = fields.String(location="json")
 
 class ListWorkflowArgs(Schema):
     status = fields.String(location="query")
