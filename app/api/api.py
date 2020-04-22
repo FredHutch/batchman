@@ -14,7 +14,9 @@ from app.models import (
 )
 from app import db
 
-from app.auth import get_jwt_identity, get_jwt_groups, validate_workgroup
+from app.auth import (get_jwt_identity, get_jwt_groups,
+    validate_api_key, get_workgroup_from_api_key
+)
 
 ecs_client = boto3.client('ecs', region_name='us-west-2')
 batch_client = boto3.client('batch', region_name='us-west-2')
@@ -121,14 +123,20 @@ class WorkflowList(MethodView):
     def post(self, args):
         """Submit new workflow for execution"""
         # 0. define execution environment variables
-        if ("workgroup" not in args) or (args["workgroup"] not in current_app.config["WORKGROUPS"]):
-            return jsonify({"error": "Must specify a valid `workgroup` in POST"}), 500
-        else:
+        if args.get("workgroup") in current_app.config["WORKGROUPS"]:
+            # user-initiated launch via web interface
             WORKGROUP = args["workgroup"]
             if WORKGROUP not in get_jwt_groups():
                 return jsonify({"error": "User is not part of group"}), 401
             else:
                 env = current_app.config["WORKGROUPS"][WORKGROUP]
+        elif validate_api_key(args.get("api_key")):
+            # headless or API-driven launch
+            WORKGROUP = get_workgroup_from_api_key(args["api_key"])
+            env = current_app.config["WORKGROUP"][WORKGROUP]
+        else:
+            return jsonify({"error": "Must specify a valid workgroup or api_key in POST"}), 500
+            
 
         nextflow_options = ["-with-trace"]
         additional_env_vars = []
