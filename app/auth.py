@@ -57,9 +57,9 @@ def validate_workgroup(arn_field_name='id'):
 def validate_api_key(api_key):
     for workgroup, env in current_app.config["WORKGROUPS"].items():
         if api_key == env["API_KEY"]:
-            return true
+            return True
     else:
-        return false
+        return False
 
 def get_workgroup_from_api_key(api_key):
     for workgroup, env in current_app.config["WORKGROUPS"].items():
