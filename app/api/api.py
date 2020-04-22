@@ -14,7 +14,7 @@ from app.models import (
 )
 from app import db
 
-from app.auth import (get_jwt_identity, get_jwt_groups,
+from app.auth import (get_jwt_identity, get_jwt_groups, validate_workgroup,
     validate_api_key, get_workgroup_from_api_key
 )
 
