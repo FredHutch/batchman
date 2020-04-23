@@ -56,7 +56,7 @@ When a user submits a workflow in Batchman, a container is spun up in
 
 The lambda function just takes its input event and posts it to an API endpoint exposed by the web app back end.
 
-It has two triggers, both are CloudWatch events. The first is ECS and task and container state change events. The second is all events from AWS Batch.
+It has two triggers, both are CloudWatch events. The first is ECS task and container state change events. The second is all events from AWS Batch.
 
 ### AWS Batch Infrastructure
 
@@ -80,9 +80,6 @@ What is required for a developer to work on the Batchman app
 
 There are other cloud-based components that are part of Batchman but 
 this document focuses on developing the main web app. 
-
-[TODO: discuss setting up cloud components and/or configuring cloud components to work with the app as deployed on the developer's machine].
-
 
 
 # Prerequisites
@@ -175,7 +172,7 @@ Go to the frontend directory:
 cd frontend
 ```
 
-Install node.js dependencies:
+Install node.js dependencies (you only need to do this once, unless dependencies change):
 
 ```
 npm install
@@ -328,7 +325,7 @@ The `/api/v1/ecslog` endpoint in the app should receive events from the cloud co
 
 
 
-If you ever want to feed events to the endpoint yourself or via a script, see the [event reference document](event-reference.md) for more on the events that Nextflow sends. (This does not cover the events that AWS Batch sends. 
+If you ever want to feed events to the endpoint yourself or via a script, see the [event reference document](event-reference.md) for more on the events that Nextflow sends. 
 
 Another way of submitting workflows is to use the Wizard. Click on `Submit` and then `Wizard`. Paste in the following URL:
 
