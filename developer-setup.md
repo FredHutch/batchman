@@ -229,7 +229,7 @@ Also be sure to change this back to how it was (with the `batchman-dev` URL acti
 
 **Note**: If multiple people are developing Batchman at the same time using this method, we may want to set up another AWS account. Because if one developer is doing these steps, the other developer will not receive events from the clpud components. This method can basically only be used by one developer at a time, and it makes Batchman (at least in this AWS account) unusable by others. Since this is a development account, this is not a huge problem.
 
-...
+
 
 
 
