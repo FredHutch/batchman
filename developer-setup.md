@@ -10,6 +10,25 @@ The main focus of this document is getting a developer set up to develop on Batc
 Batchman originated at the UW and Fred Hutch is planning to contribute to the development effort.
 
 Batchman consists of a number of components. We'll discuss them in turn.
+But first:
+
+## What is Batchman?
+
+Batchman is basically a server for [Nextflow](https://www.nextflow.io/).
+Nextflow is a workflow engine for running multi-step workflows. 
+Batchman removes the need for 1) using the command line; and 2) users do not need to leave their computers running so that the Nextflow command (which could take days) can finish. 
+
+Batchman also gives you lots of information about your workflow runs all in one place, whereas if you just ran Nextflow directly this would not be the case. 
+
+Each separate component of Batchman is discussed in more detail below, 
+but here's a thumbnail sketch of how the pieces fit together:
+
+Users use the web app (either the GUI front end or the REST API) to submit their workflows. With each new submission, the app will spin up a Nextflow container in Elastic Container Service which will submit the workflow to AWS Batch. Logs from Nextflow and AWS Batch get routed back to the app so it can display and store information about workflow status.
+
+[Here](AWSNetworkDiagram.pdf) is a slightly outdated diagram of the pieces.
+
+Also, here is a [diagram](DokkuStack.pdf) of how the batchman web app is deployed at UW. This does not reflect anything about how it is or may be deployed at Fred Hutch, now or in the future.
+
 
 ## Batchman Web App
 
@@ -67,10 +86,6 @@ specifically an EC2 launch template that takes care of nextflow-specific things 
 ### Misc
 
 There is other cloud infrastructure created by the `batchman-infra` repo. It is mostly lower-level stuff which supports the larger components above. Examples include VPCs and subnets, IAM roles and policies, log streams, S3 buckets, etc. 
-
-## Functionality & Flow
-
-TODO
 
 
 # Developer Setup
@@ -337,7 +352,9 @@ This is great for less experienced users who want to run a pre-existing workflow
 The template technology used is called [react-jsonschema-form](https://react-jsonschema-form.readthedocs.io/en/latest/).
 
 
+## Now what?
 
-TODO: include graphs
+You have your development environment working. What should you do?
+Have a look at the [issues](https://github.com/FredHutch/batchman/issues/) in the repository and see if there is anything you feel like tackling.
 
-
+Please feel free to file your own issues for any features you think are missing or need further improvement.
