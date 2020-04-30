@@ -162,9 +162,7 @@ class WorkflowList(MethodView):
         elif ("git_url" in args):
             # 1b. Or, if a git url is provided
             execution_type = "GIT_URL"
-            if "git_hash" in args:
-                nextflow_options.append("-r " + args["git_hash"])
-            command = ["runner.sh", args["git_url"]]
+            command = ["runner.sh", args["git_url"], args.get("git_hash", "master")]
         elif ("s3_url" in args):
             # 1c. Or, a s3 url
             execution_type = "S3_URL"
