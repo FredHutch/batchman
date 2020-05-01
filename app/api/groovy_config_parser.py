@@ -24,6 +24,7 @@ class GroovyConfigSlurper:
     def parse(self):
         lex = shlex(self.source)
         lex.wordchars += "."
+        lex.wordchars += "-"
         lex.commenters += "//"
         state = 1
         context = []
