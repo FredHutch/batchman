@@ -24,6 +24,7 @@ class GroovyConfigSlurper:
     def parse(self):
         lex = shlex(self.source)
         lex.wordchars += "."
+        lex.wordchars += "-"
         lex.commenters += "//"
         state = 1
         context = []
@@ -53,18 +54,29 @@ class GroovyConfigSlurper:
                     #raise ParseException(token, lex.lineno, state, name)
                     state = 2
             elif state == 3:
-                try:
-                    value = TRANSLATION[str(token)]
-                except KeyError:
+                if token == "{": # start a closure
+                    context.append("closure")
+                    state = 4
+                else:
                     try:
-                        value = literal_eval(token)
-                    except:
-                        value = str(token)
-                key = ".".join(context + [name]).split(".")
-                current = result
-                for i in range(0, len(key) - 1):
-                    if key[i] not in current:
-                        current[key[i]] = dict()
-                    current = current[key[i]]
-                current[key[-1]] = value
-                state = 1
+                        value = TRANSLATION[str(token)]
+                    except KeyError:
+                        try:
+                            value = literal_eval(token)
+                        except:
+                            value = str(token)
+                    key = ".".join(context + [name]).split(".")
+                    current = result
+                    for i in range(0, len(key) - 1):
+                        if key[i] not in current:
+                            current[key[i]] = dict()
+                        current = current[key[i]]
+                    current[key[-1]] = value
+                    state = 1
+            elif state == 4:
+                # handle closure (they are ignored)
+                if token == "}":
+                    context.pop()
+                    state = 1
+                else:
+                    print(name, token)

@@ -35,28 +35,6 @@ def get_jwt_identity():
 def get_jwt_groups():
     return get_jwt_claims()["profile"]
 
-def validate_api_key(fargateTaskArn, api_key):
-    try:
-        t = db.session.query(TaskExecution)\
-            .filter(TaskExecution.taskArn==taskArn).one()
-    except sqlalchemy.orm.exc.NoResultFound:
-        abort(404)
-
-    if t.group == get_group_by_key(api_key):
-        return true
-    else:
-        return false
-
-# from https://coderwall.com/p/4qickw/require-an-api-key-for-a-route-in-flask-using-only-a-decorator
-def require_logging_apikey(view_function):
-    @wraps(view_function)
-    def decorated_function(*args, **kwargs):
-        if request.args.get('key') and request.args.get('key') == current_app.config["LOGGING_API_KEY"]:
-            return view_function(*args, **kwargs)
-        else:
-            abort(401)
-    return decorated_function
-
 def validate_workgroup(arn_field_name='id'):
     def _validate_workgroup(fn):
         @wraps(fn)
@@ -75,3 +53,17 @@ def validate_workgroup(arn_field_name='id'):
         return wrapper
 
     return _validate_workgroup
+
+def validate_api_key(api_key):
+    for workgroup, env in current_app.config["WORKGROUPS"].items():
+        if api_key == env["API_KEY"]:
+            return True
+    else:
+        return False
+
+def get_workgroup_from_api_key(api_key):
+    for workgroup, env in current_app.config["WORKGROUPS"].items():
+        if api_key == env["API_KEY"]:
+            return workgroup
+    else:
+        return None

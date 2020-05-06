@@ -14,7 +14,9 @@ from app.models import (
 )
 from app import db
 
-from app.auth import get_jwt_identity, get_jwt_groups, validate_workgroup
+from app.auth import (get_jwt_identity, get_jwt_groups, validate_workgroup,
+    validate_api_key, get_workgroup_from_api_key
+)
 
 ecs_client = boto3.client('ecs', region_name='us-west-2')
 batch_client = boto3.client('batch', region_name='us-west-2')
@@ -40,7 +42,8 @@ class CreateWorkflowArgs(Schema):
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
     # nextflow_config = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
-    workgroup = fields.String(location="json", required=True)
+    workgroup = fields.String(location="json")
+    api_key = fields.String(location="json")
 
 class ListWorkflowArgs(Schema):
     status = fields.String(location="query")
@@ -121,14 +124,22 @@ class WorkflowList(MethodView):
     def post(self, args):
         """Submit new workflow for execution"""
         # 0. define execution environment variables
-        if ("workgroup" not in args) or (args["workgroup"] not in current_app.config["WORKGROUPS"]):
-            return jsonify({"error": "Must specify a valid `workgroup` in POST"}), 500
-        else:
+        if args.get("workgroup") in current_app.config["WORKGROUPS"]:
+            # user-initiated launch via web interface
             WORKGROUP = args["workgroup"]
             if WORKGROUP not in get_jwt_groups():
                 return jsonify({"error": "User is not part of group"}), 401
             else:
                 env = current_app.config["WORKGROUPS"][WORKGROUP]
+                username = get_jwt_identity()
+        elif validate_api_key(args.get("api_key")):
+            # headless or API-driven launch
+            WORKGROUP = get_workgroup_from_api_key(args["api_key"])
+            env = current_app.config["WORKGROUPS"][WORKGROUP]
+            username = "API"
+        else:
+            return jsonify({"error": "Must specify a valid workgroup or api_key in POST"}), 500
+            
 
         nextflow_options = ["-with-trace"]
         additional_env_vars = []
@@ -151,9 +162,7 @@ class WorkflowList(MethodView):
         elif ("git_url" in args):
             # 1b. Or, if a git url is provided
             execution_type = "GIT_URL"
-            if "git_hash" in args:
-                nextflow_options.append("-r " + args["git_hash"])
-            command = ["runner.sh", args["git_url"]]
+            command = ["runner.sh", args["git_url"], args.get("git_hash", "master")]
         elif ("s3_url" in args):
             # 1c. Or, a s3 url
             execution_type = "S3_URL"
@@ -263,7 +272,7 @@ class WorkflowList(MethodView):
             fargateLogGroupName='/ecs/nextflow-runner',
             fargateLogStreamName='ecs/nextflow/%s' % taskArn,
             cacheTaskArn=resume_fargate_task_arn,
-            username=get_jwt_identity(),
+            username=username,
             workgroup=WORKGROUP,
             launchMetadata=launchMetadataJson,
         )
