@@ -46,6 +46,9 @@
   font-size: 10pt;
 }
 
+.labeled-value > table.label-list td.value pre {
+  max-height: 200px;
+}
 
 .modal-backdrop {
   opacity: 0.4;
