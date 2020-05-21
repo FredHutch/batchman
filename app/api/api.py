@@ -37,7 +37,7 @@ class CreateWorkflowArgs(Schema):
     nextflow_params = fields.String(location="json")
     nextflow_profile = fields.String(location="json")
     nextflow_workdir = fields.String(location="json")
-    git_url = fields.String(location="json").strip('/')
+    git_url = fields.String(location="json")
     git_hash = fields.String(location="json")
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
@@ -162,7 +162,8 @@ class WorkflowList(MethodView):
         elif ("git_url" in args):
             # 1b. Or, if a git url is provided
             execution_type = "GIT_URL"
-            command = ["runner.sh", args["git_url"], args.get("git_hash", "master")]
+            git_url=args["git_url"].strip('/')
+            command = ["runner.sh", git_url, args.get("git_hash", "master")]
         elif ("s3_url" in args):
             # 1c. Or, a s3 url
             execution_type = "S3_URL"
