@@ -37,7 +37,7 @@ class CreateWorkflowArgs(Schema):
     nextflow_params = fields.String(location="json")
     nextflow_profile = fields.String(location="json")
     nextflow_workdir = fields.String(location="json")
-    git_url = fields.String(location="json")
+    git_url = fields.String(location="json").strip('/')
     git_hash = fields.String(location="json")
     resume_fargate_task_arn = fields.String(location="json", required=False) # if present, will attempt to resume from prior taskArn
     # nextflow_workflow = fields.Function(location="files", deserialize=lambda x: x.read().decode("utf-8"))
