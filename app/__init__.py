@@ -31,7 +31,7 @@ def create_app():
             client = boto3.Session(region_name=params["Region"]).client('rds')
             token = client.generate_db_auth_token(**params)
             return psycopg2.connect(
-                host=params["DBHostname"], port=params["Port"], database="cloudfilesdb", 
+                host=params["DBHostname"], port=params["Port"], database="batchbotdb", 
                 user=params["DBUsername"], password=token
             )
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"creator": connect}
