@@ -11,7 +11,7 @@ STACK_NAME: "app-batchbot-stack-{{ ENV }}"
 CF_TEMPLATES_BUCKET_NAME: "uwlm-aws-admin-cf-templates"
 
 # RDS configuration
-PGUSER: "batchbotdb"
+PGUSER: "batchbot_user"
 PGDATABASE: "batchbotdb"
 DB_SECURITY_GROUP: "sg-0f1dcf442bfb15380"
 DB_SUBNET_NAME: "dokku-stack-apps-dbsubnetgroup-16hpxaxltqys8"
