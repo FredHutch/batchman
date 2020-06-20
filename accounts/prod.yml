@@ -1,0 +1,19 @@
+---
+ENV: "prod"
+AWS_PROFILE: "saml"
+
+APPNAME: "batchbot"
+HOSTNAME: "batchbot.labmed.uw.edu"
+DOKKU_HOST: "dokku-stack-apps-ngs-{{ ENV }}"
+STACK_NAME: "app-batchbot-stack-{{ ENV }}"
+
+# deployment variables
+CF_TEMPLATES_BUCKET_NAME: "uwlm-aws-admin-cf-templates"
+
+# RDS configuration
+PGUSER: "batchbotdb"
+PGDATABASE: "batchbotdb"
+DB_SECURITY_GROUP: "sg-0f1dcf442bfb15380"
+DB_SUBNET_NAME: "dokku-stack-apps-dbsubnetgroup-16hpxaxltqys8"
+DBI_RESOURCE_ID: "db-TK7UPJ2RP7ZUOQOH4RK2KZMOQY"
+

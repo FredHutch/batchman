@@ -4,61 +4,116 @@
   become: no
   gather_facts: no
 
+  vars_files:
+      - accounts/{{ ACCOUNT }}.yml
+
   vars:
-    AWS_PROFILE: "saml"
-    APPNAME: "batchman"
-    DOKKU_HOST: "dokku-stack-dev"
-    STACK_NAME: "app-batchman-stack"
-    PGUSER: "batchmandb"
-    PGDATABASE: "batchmandb"
-    PGPASSWORD: "batchmandb"
+    ACCOUNT: "dev"
+    AWS_PROFILE: "saml_dev"
+
     CLOUDFORMATION_PARAMS:
       DBName: "{{ PGDATABASE }}"
       DBUsername: "{{ PGUSER }}"
-      DBPassword: "{{ PGPASSWORD }}"
-      DBSecurityGroup: "sg-0c46c5616bf07cbf6"
-      DBSubnetGroupName: "dokku-stack-dev-dbsubnetgroup-uongqr3nw529"
+      DBSecurityGroup: "{{ DB_SECURITY_GROUP }}"
+      DBSubnetGroupName: "{{ DB_SUBNET_NAME }}"
+      DBIResourceId: "{{ DBI_RESOURCE_ID }}"
+
 
   tasks:
-    - name: generate cloudformation json from troposphere file
-      shell: "python aws-infra/{{STACK_NAME}}.template.py > ./{{STACK_NAME}}.generated.json"
-      tags: generate-json
-    - name: upload cloudformation template to s3
-      aws_s3:
-        src: "./{{STACK_NAME}}.generated.json"
-        object: "{{STACK_NAME}}.generated.json"
-        bucket: "uwlm-aws-admin-cf-templates"
-        mode: "put"
-    - name: deploy the cloudformation template for this stack
-      cloudformation:
-        profile: "{{ AWS_PROFILE }}"
-        stack_name: "{{ STACK_NAME }}"
-        state: "present"
-        region: "us-west-2"
-        create_changeset: true
-        template_url: "https://s3.amazonaws.com/uwlm-aws-admin-cf-templates/{{STACK_NAME}}.generated.json"
-        template_parameters: "{{ CLOUDFORMATION_PARAMS }}"
-      register: stack
-    # rds endpoint in stack.stack_outputs['RDSEndpoint']
+    - name: deploy CFT
+      block:
+      - name: generate cloudformation json from troposphere file
+        shell: "python aws-infra/app-batchbot-stack.template.py > ./{{STACK_NAME}}.generated.json"
+        tags: generate-json
+      - name: upload cloudformation template to s3
+        aws_s3:
+          src: "./{{STACK_NAME}}.generated.json"
+          object: "{{STACK_NAME}}.generated.json"
+          bucket: "uwlm-aws-admin-cf-templates"
+          mode: "put"
+      - name: deploy the cloudformation template for this stack
+        cloudformation:
+          profile: "{{ AWS_PROFILE }}"
+          stack_name: "{{ STACK_NAME }}"
+          state: "present"
+          region: "us-west-2"
+          create_changeset: true
+          template_url: "https://s3.amazonaws.com/uwlm-aws-admin-cf-templates/{{STACK_NAME}}.generated.json"
+          template_parameters: "{{ CLOUDFORMATION_PARAMS }}"
+        register: stack
+      tags: cloudformation
 
-    - name: define RDS URL on dokku
+- hosts: "{{ ACCOUNT }}"
+  become: yes
+  become_user: dokku
+
+  vars_files:
+    - accounts/{{ ACCOUNT }}.yml
+
+  tasks:
+    - name: "check if {{ APPNAME }} exists"
+      shell: "dokku apps:exists {{ APPNAME }}"
+      register: app_exists
+      ignore_errors: True
+
+    - name: "create {{ APPNAME }}"
+      shell: "dokku {{ item }}"
+      with_items:
+        - "apps:create {{ APPNAME }}"
+        - "git:initialize {{ APPNAME }}"
+      when: app_exists.rc == 1
+
+    - name: initial dokku configuration
+      shell: "dokku {{ item }}"
+      with_items:
+        - "domains:add {{ APPNAME }} {{ HOSTNAME }}"
+        - "robots.txt:disallow {{ APPNAME }}"
+    
+    - name: Configure RDS user for IAM
       block:
         - name: call get_stack_output
           delegate_to: localhost
           become: false
           get_stack_output:
             stack_name: "{{ STACK_NAME }}"
-        - name: define DATABASE_URL
-          set_fact:
-            DATABASE_URL: "postgres://{{ PGUSER }}:{{ PGPASSWORD }}@{{ STACK_OUTPUT['RDSEndpoint'] }}:5432/{{ PGDATABASE }}"
-        - name: set environment variables on dokku host
+        - name: install libpq-dev
+          become_user: root
+          apt: 
+            name: libpq-dev
+        - name: install psycopg2
+          become_user: root
+          pip: 
+            name: psycopg2
+        - name: create user
+          postgresql_user:
+            login_user: "{{ PGUSER }}"
+            login_password: "{{ lookup('aws_secret', '/app/batchbot/dbpassword') }}"
+            login_host: "{{ STACK_OUTPUT['RDSEndpoint'] }}"
+            login_db: "{{ PGDATABASE }}"
+            login_unix_socket: "5432"
+            name: batchbot_user
+        - name: grant roles
+          postgresql_query:
+            login_user: "{{ PGUSER }}"
+            login_password: "{{ lookup('aws_secret', '/app/batchbot/dbpassword') }}"
+            login_host: "{{ STACK_OUTPUT['RDSEndpoint'] }}"
+            login_db: "{{ PGDATABASE }}"
+            login_unix_socket: "5432"
+            query: >
+              GRANT rds_iam TO batchbot_user;
+              
+
+        - name: call get_stack_output
+          delegate_to: localhost
+          become: false
+          get_stack_output:
+            stack_name: "{{ STACK_NAME }}"
+        - name: set accounts variables on dokku host
           delegate_to: "{{ DOKKU_HOST }}"
           become_user: dokku
           command: "dokku config:set --encoded --no-restart {{ APPNAME }} {{ item }}"
+          no_log: true
           with_items:
-            - "DATABASE_URL='{{ DATABASE_URL | b64encode }}'"
+              - "DBHOST='{{ STACK_OUTPUT['RDSEndpoint'] | b64encode}}'"
       tags:
-        - env-vars
-
-
-
+        - rds-config
