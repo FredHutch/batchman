@@ -68,6 +68,8 @@
       with_items:
         - "domains:add {{ APPNAME }} {{ HOSTNAME }}"
         - "robots.txt:disallow {{ APPNAME }}"
+        - "proxy:ports-clear {{ APPNAME }}"
+        - "proxy:ports-add {{ APPNAME }} http:80:8000"
     
     - name: Configure RDS user for IAM
       block:
@@ -101,7 +103,8 @@
             login_unix_socket: "5432"
             query: >
               GRANT rds_iam TO batchbot_user;
-              
+              GRANT SELECT ON ALL TABLES in SCHEMA public to batchbot_user    ;
+              GRANT ALL ON SCHEMA public to batchbot_user;              
 
         - name: call get_stack_output
           delegate_to: localhost
