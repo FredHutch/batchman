@@ -16,9 +16,7 @@ def get_api_key():
 
 class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.join(
-        basedir, 'app.db'
-    )
+    
     OPENAPI_VERSION = '3.0.2'
     API_PREFIX = '/api/v1'
     
