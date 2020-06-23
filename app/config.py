@@ -16,9 +16,7 @@ def get_api_key():
 
 class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.join(
-        basedir, 'app.db'
-    )
+    
     OPENAPI_VERSION = '3.0.2'
     API_PREFIX = '/api/v1'
     
@@ -54,9 +52,16 @@ class Config(object):
 
 class ProductionConfig(Config):
     AUTH_METHOD = 'SAML'
+    RDS_PARAMS = {
+        "DBHostname": os.environ.get('DBHOST'),
+        "Port": 5432,
+        "DBUsername": "batchbot_user",
+        "Region": "us-west-2"
+    }
+    SQLALCHEMY_DATABASE_URI = "postgres://"
 
 class DevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI= "postgresql://@127.0.0.1/batchman"
+    SQLALCHEMY_DATABASE_URI= "postgresql://localhost/batchmandb"
     AUTH_METHOD = 'MOCK'
     MOCK_USERNAME = 'nkrumm'
     MOCK_GROUPS = ['u_labmed_dg_ngs-users', 'u_labmed_dg_molmicro']

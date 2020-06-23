@@ -42,7 +42,9 @@ valid_schema = Schema({
 class NextflowConfigParse(MethodView):
     @ActionsApi.arguments(NextflowConfigParseArgs)
     def post(self, args):
+        print(args["nextflow_config"])
         config = GroovyConfigSlurper(args["nextflow_config"]).parse()
+        print(config)
         valid_profiles = []
         errors = []
         for name, p in config["profiles"].items():

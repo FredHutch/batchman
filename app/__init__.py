@@ -1,5 +1,8 @@
 import sys
 import os
+import boto3
+import psycopg2
+
 import flask_rest_api
 import flask_sqlalchemy
 import flask_migrate
@@ -20,8 +23,19 @@ def create_app():
 
     if os.environ.get('FLASK_ENV') == 'development':
         app.config.from_object('app.config.DevelopmentConfig')
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {}
     else:
         app.config.from_object('app.config.ProductionConfig')
+        params = app.config["RDS_PARAMS"]
+        # define custom connector, since flask-sqlalchemy has trouble with IAM token
+        def connect():
+            client = boto3.Session(region_name=params["Region"]).client('rds')
+            token = client.generate_db_auth_token(**params)
+            return psycopg2.connect(
+                host=params["DBHostname"], port=params["Port"], database="batchbotdb", 
+                user=params["DBUsername"], password=token
+            )
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"creator": connect}
     
     ## Database
     db.init_app(app)

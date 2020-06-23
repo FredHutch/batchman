@@ -4,3 +4,4 @@ __pycache__
 app/app.db
 .DS_Store
 api.key
+app-batchbot-stack-prod.generated.json
