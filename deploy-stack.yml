@@ -67,6 +67,7 @@
       shell: "dokku {{ item }}"
       with_items:
         - "domains:add {{ APPNAME }} {{ HOSTNAME }}"
+        - "domains:add {{ APPNAME }} {{ INTERNAL_HOSTNAME }}"
         - "robots.txt:disallow {{ APPNAME }}"
         - "proxy:ports-clear {{ APPNAME }}"
         - "proxy:ports-add {{ APPNAME }} http:80:8000"

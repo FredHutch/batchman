@@ -4,6 +4,7 @@ AWS_PROFILE: "saml"
 
 APPNAME: "batchbot"
 HOSTNAME: "batchbot.labmed.uw.edu"
+INTERNAL_HOST: "batchbot.labmed.internal"
 DOKKU_HOST: "dokku-stack-apps-ngs-{{ ENV }}"
 STACK_NAME: "app-batchbot-stack-{{ ENV }}"
 
