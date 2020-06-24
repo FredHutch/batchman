@@ -33,6 +33,11 @@ const handleError = (response) => {
     return response.json()  //we only get here if there is no error
 }
 
+const handleErrorText = (response) => {
+    if (!response.ok) { return false }
+    return response.text()  //we only get here if there is no error
+}
+
 const log = (type) => console.log.bind(console, type);
 
 function TemplateLaunchForm(props) {
@@ -67,13 +72,13 @@ function TemplateLaunchForm(props) {
       }
     }
 
-    useMemo(() => {
+    useEffect(() => {
       try {
         const rawUrl = generateRawUrl(workflowUrl, workflowHash);
         Promise.all([
             fetch(`${rawUrl}/template.json`).then(handleError),
             fetch(`${rawUrl}/params.json`).then(handleError),
-            fetch(`${rawUrl}/nextflow.config`).then((r) => r.text()),
+            fetch(`${rawUrl}/nextflow.config`).then(handleErrorText),
         ]).then(([templateRes, paramsRes, configRes]) => {
           if (templateRes){
             setTemplateSchema(templateRes)

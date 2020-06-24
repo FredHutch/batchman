@@ -78,6 +78,14 @@ application_policy = iam.ManagedPolicy(
                               ":dbuser:",Ref("DBIResourceId"),"/"
                               "batchbot_user"])
                 ]
+            ),
+            Statement(
+                Effect=Allow,
+                Action=[Action("iam", "PassRole")],
+                Resource=[
+                    Join("", "arn:aws:iam::", Ref("AWS::AccountId"), ":role/EcsTaskExecutionRoleForNextflowRunner"),
+                    Join("", "arn:aws:iam::", Ref("AWS::AccountId"), ":role/nextflow-fargate-runner-role")
+                ]
             )
         ]
     )
