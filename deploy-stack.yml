@@ -104,9 +104,9 @@
             login_unix_socket: "5432"
             query: >
               GRANT rds_iam TO batchbot_user;
-              GRANT SELECT ON ALL TABLES in SCHEMA public to batchbot_user    ;
-              GRANT ALL ON SCHEMA public to batchbot_user;              
-
+              GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO batchbot_user;
+              GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO batchbot_user;
+              GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO batchbot_user;
         - name: call get_stack_output
           delegate_to: localhost
           become: false
