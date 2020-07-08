@@ -28,7 +28,7 @@ class Config(object):
     WORKGROUPS = {
         "u_labmed_dg_ngs-users": dict(
             DISPLAY_NAME = "NGS Analytics",
-            ECS_CLUSTER = 'AWSBatchComputeEnvironm-c3c5de4c10ec3d4_Batch_7361dd51-1507-3ad0-a23e-992668a1caa0',
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-50f4e74ba6e40ec_Batch_e36ff16c-c86f-3cfe-8f4b-4c5d965bfcf4',
             ECS_SUBNETS = ["subnet-089bdabca179ab23f"],
             NEXTFLOW_S3_SCRIPTS = 's3://uwlm-nextflow-data/scripts/ngs',
             NEXTFLOW_S3_WORK_DIR = 's3://uwlm-nextflow-data/workdir/ngs',
@@ -39,7 +39,7 @@ class Config(object):
         ),
         "u_labmed_dg_molmicro": dict(
             DISPLAY_NAME = "Mol Micro",
-            ECS_CLUSTER = 'AWSBatchComputeEnvironm-389d556fb4abb35_Batch_471fd548-1a2e-34ba-b9a9-5a9f5f0c1967',
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-535992631931acf_Batch_7e3b554e-6cbb-307a-8597-b794d8a42c51',
             ECS_SUBNETS = ["subnet-089bdabca179ab23f"],
             NEXTFLOW_S3_SCRIPTS = 's3://uwlm-nextflow-data/scripts/molmicro',
             NEXTFLOW_S3_WORK_DIR = 's3://uwlm-nextflow-data/workdir/molmicro',
