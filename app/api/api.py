@@ -162,7 +162,8 @@ class WorkflowList(MethodView):
         elif ("git_url" in args):
             # 1b. Or, if a git url is provided
             execution_type = "GIT_URL"
-            command = ["runner.sh", args["git_url"], args.get("git_hash", "master")]
+            git_url=args["git_url"].strip('/')
+            command = ["runner.sh", git_url, args.get("git_hash", "master")]
         elif ("s3_url" in args):
             # 1c. Or, a s3 url
             execution_type = "S3_URL"
