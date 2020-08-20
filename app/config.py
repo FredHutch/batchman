@@ -64,7 +64,7 @@ class AWSDevelopmentConfig(Config):
     AUTH_METHOD = 'SAML'
     # configure api
     API_ENDPOINT = "http://batchbot.labmed.internal"
-    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:1'
+    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:3'
 
     # SAML group <> resource mapping; keys correspond to ELMIRA groups.
     WORKGROUPS = {
