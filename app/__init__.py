@@ -9,7 +9,6 @@ import flask_migrate
 
 from flask import Flask, make_response, redirect, send_from_directory, jsonify, request, current_app, render_template, json
 
-
 ## Initialize these objects here
 # so they are accessible by `from app import db`
 db = flask_sqlalchemy.SQLAlchemy(
@@ -22,10 +21,13 @@ def create_app():
     app = Flask(__name__, static_folder="build")
 
     if os.environ.get('FLASK_ENV') == 'development':
-        app.config.from_object('app.config.DevelopmentConfig')
+        app.config.from_object('app.config.LocalConfig')
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {}
     else:
-        app.config.from_object('app.config.ProductionConfig')
+        if os.environ.get('AWS_ACCOUNT') == "prod":
+            app.config.from_object('app.config.AWSProductionConfig')
+        else: 
+            app.config.from_object('app.config.AWSDevelopmentConfig')
         params = app.config["RDS_PARAMS"]
         # define custom connector, since flask-sqlalchemy has trouble with IAM token
         def connect():

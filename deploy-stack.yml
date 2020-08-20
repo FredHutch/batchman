@@ -119,5 +119,6 @@
           no_log: true
           with_items:
               - "DBHOST='{{ STACK_OUTPUT['RDSEndpoint'] | b64encode}}'"
+              - "AWS_ACCOUNT='{{ ACCOUNT | b64encode}}'"
       tags:
         - rds-config
