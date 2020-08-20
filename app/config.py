@@ -70,7 +70,7 @@ class AWSDevelopmentConfig(Config):
     WORKGROUPS = {
         "u_labmed_dg_ngs-users": dict(
             DISPLAY_NAME = "NGS Analytics",
-            ECS_CLUSTER = 'AWSBatchComputeEnvironm-c6053ec0f7b803a_Batch_ef30a0b0-33cc-35f9-ac5a-451eeba7805a',
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-e2b346600953713_Batch_ed6d3f13-9679-3bd9-8835-7413ffb90c6c',
             ECS_SUBNETS = ["subnet-01849d18e4c8a8719"],
             NEXTFLOW_S3_SCRIPTS = 's3://uwlmdev-nextflow-data/scripts/ngs',
             NEXTFLOW_S3_WORK_DIR = 's3://uwlmdev-nextflow-data/workdir/ngs',
