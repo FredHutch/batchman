@@ -19,7 +19,9 @@ class Config(object):
     
     OPENAPI_VERSION = '3.0.2'
     API_PREFIX = '/api/v1'
-    
+
+class AWSProductionConfig(Config):
+    AUTH_METHOD = 'SAML'
     # configure api
     API_ENDPOINT = "http://batchbot.labmed.internal"
     NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:5'
@@ -50,8 +52,6 @@ class Config(object):
         )
     }
 
-class ProductionConfig(Config):
-    AUTH_METHOD = 'SAML'
     RDS_PARAMS = {
         "DBHostname": os.environ.get('DBHOST'),
         "Port": 5432,
@@ -60,7 +60,36 @@ class ProductionConfig(Config):
     }
     SQLALCHEMY_DATABASE_URI = "postgres://"
 
-class DevelopmentConfig(Config):
+class AWSDevelopmentConfig(Config):
+    AUTH_METHOD = 'SAML'
+    # configure api
+    API_ENDPOINT = "http://batchbot.labmed.internal"
+    NEXTFLOW_TASK_DEFINITION = 'nextflow-fargate-runner:1'
+
+    # SAML group <> resource mapping; keys correspond to ELMIRA groups.
+    WORKGROUPS = {
+        "u_labmed_dg_ngs-users": dict(
+            DISPLAY_NAME = "NGS Analytics",
+            ECS_CLUSTER = 'AWSBatchComputeEnvironm-c6053ec0f7b803a_Batch_ef30a0b0-33cc-35f9-ac5a-451eeba7805a',
+            ECS_SUBNETS = ["subnet-01849d18e4c8a8719"],
+            NEXTFLOW_S3_SCRIPTS = 's3://uwlmdev-nextflow-data/scripts/ngs',
+            NEXTFLOW_S3_WORK_DIR = 's3://uwlmdev-nextflow-data/workdir/ngs',
+            NEXTFLOW_S3_SESSION_CACHE = 's3://uwlmdev-nextflow-data/session_data/ngs',
+            NEXTFLOW_DEFAULT_PROFILE = "uw_batch",
+            API_KEY = os.environ.get('API_KEY') or get_api_key(),
+            IAM_TASK_ROLE_ARN = "arn:aws:iam::962600566068:role/nextflow-fargate-runner-role",
+        )
+    }
+
+    RDS_PARAMS = {
+        "DBHostname": os.environ.get('DBHOST'),
+        "Port": 5432,
+        "DBUsername": "batchbot_user",
+        "Region": "us-west-2"
+    }
+    SQLALCHEMY_DATABASE_URI = "postgres://"    
+
+class LocalConfig(Config):
     SQLALCHEMY_DATABASE_URI= "postgresql://localhost/batchmandb"
     AUTH_METHOD = 'MOCK'
     MOCK_USERNAME = 'nkrumm'

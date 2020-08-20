@@ -29,7 +29,7 @@
         aws_s3:
           src: "./{{STACK_NAME}}.generated.json"
           object: "{{STACK_NAME}}.generated.json"
-          bucket: "uwlm-aws-admin-cf-templates"
+          bucket: "{{CF_TEMPLATES_BUCKET_NAME}}"
           mode: "put"
       - name: deploy the cloudformation template for this stack
         cloudformation:
@@ -38,7 +38,7 @@
           state: "present"
           region: "us-west-2"
           create_changeset: true
-          template_url: "https://s3.amazonaws.com/uwlm-aws-admin-cf-templates/{{STACK_NAME}}.generated.json"
+          template_url: "https://s3.amazonaws.com/{{CF_TEMPLATES_BUCKET_NAME}}/{{STACK_NAME}}.generated.json"
           template_parameters: "{{ CLOUDFORMATION_PARAMS }}"
         register: stack
       tags: cloudformation
@@ -67,7 +67,7 @@
       shell: "dokku {{ item }}"
       with_items:
         - "domains:add {{ APPNAME }} {{ HOSTNAME }}"
-        - "domains:add {{ APPNAME }} {{ INTERNAL_HOSTNAME }}"
+        - "domains:add {{ APPNAME }} {{ INTERNAL_HOST }}"
         - "robots.txt:disallow {{ APPNAME }}"
         - "proxy:ports-clear {{ APPNAME }}"
         - "proxy:ports-add {{ APPNAME }} http:80:8000"

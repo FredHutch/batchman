@@ -83,8 +83,8 @@ application_policy = iam.ManagedPolicy(
                 Effect=Allow,
                 Action=[Action("iam", "PassRole")],
                 Resource=[
-                    Join("", "arn:aws:iam::", Ref("AWS::AccountId"), ":role/EcsTaskExecutionRoleForNextflowRunner"),
-                    Join("", "arn:aws:iam::", Ref("AWS::AccountId"), ":role/nextflow-fargate-runner-role")
+                    Join("", ["arn:aws:iam::", Ref("AWS::AccountId"), ":role/EcsTaskExecutionRoleForNextflowRunner"]),
+                    Join("", ["arn:aws:iam::", Ref("AWS::AccountId"), ":role/nextflow-fargate-runner-role"])
                 ]
             )
         ]
