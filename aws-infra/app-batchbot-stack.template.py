@@ -67,7 +67,9 @@ application_policy = iam.ManagedPolicy(
                     "arn:aws:s3:::ncgl-prod.sample-bucket",
                     "arn:aws:s3:::ncgl-prod.sample-bucket/*",
                     "arn:aws:s3:::ncgl-prod.run-bucket",
-                    "arn:aws:s3:::ncgl-prod.run-bucket/*"
+                    "arn:aws:s3:::ncgl-prod.run-bucket/*",
+                    "arn:aws:s3:::ncgl-prod.references-bucket",
+                    "arn:aws:s3:::ncgl-prod.references-bucket/*"
                 ]
             ),
             Statement(
