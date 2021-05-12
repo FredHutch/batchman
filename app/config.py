@@ -2,6 +2,19 @@ import os
 import secrets
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+import boto3
+import json
+sm = boto3.session.Session().client(service_name='secretsmanager', region_name='us-west-2')
+
+def get_secret(secret_id):
+    try:
+        res = sm.get_secret_value(SecretId=secret_id)
+        return json.loads(res['SecretString'])
+    except:
+        return {}
+
+
+
 def get_api_key():
     # read api.key file or generate new
     try:
@@ -19,6 +32,8 @@ class Config(object):
     
     OPENAPI_VERSION = '3.0.2'
     API_PREFIX = '/api/v1'
+
+    GITLAB_TOKEN = get_secret("/app/batchbot/gitlab-api-token")["TOKEN"]
 
 class AWSProductionConfig(Config):
     AUTH_METHOD = 'SAML'

@@ -61,65 +61,44 @@ function TemplateLaunchForm(props) {
 
     const paramsFormRef = useRef(null);
 
-    const generateRawUrl = (url, hash) => {
-      if (url.includes("github.com")){
-        const rawurl = url.replace("github.com", "raw.githubusercontent.com")
-        return `${rawurl}/${hash}`
-      } else if (url.includes("gitlab.com")) {
-        return `${url}/raw/${hash}/`
-      } else {
-        // todo: raise error
-      }
-    }
-
     useEffect(() => {
-      try {
-        const rawUrl = generateRawUrl(workflowUrl, workflowHash);
-        Promise.all([
-            fetch(`${rawUrl}/template.json`).then(handleError),
-            fetch(`${rawUrl}/params.json`).then(handleError),
-            fetch(`${rawUrl}/nextflow.config`).then(handleErrorText),
-        ]).then(([templateRes, paramsRes, configRes]) => {
-          if (templateRes){
-            setTemplateSchema(templateRes)
+      const fetchData = async (workflowUrl, workflowHash) => {
+        const resp = await fetch("/api/v1/get_workflow?" + new URLSearchParams({
+            url: workflowUrl,
+            hash: workflowHash,
+        }))
+        const data = await resp.json()
+        switch(data.workflow_type){
+          case "template":
+            console.log("SETTING TEMPLATE", data.template)
+            setTemplateSchema(data.template)
             setMode("template")
-          } else if (paramsRes) {
-            setJsonParams(paramsRes)
+            break
+          case "params":
+            setJsonParams(data.params)
             setMode("params")
-          } else {
+            break
+          default:
             setMode("none")
+            break
+        }
+        if (data?.config?.config){
+          setNextflowConfig(data.config);
+          const profile_list = Object.keys(data.config.config.profiles);
+          const default_workgroup_profile = userProfile.selectedWorkgroup.default_profile
+          if (profile_list.indexOf(default_workgroup_profile) > -1){
+            setNextflowProfile(default_workgroup_profile)
           }
-          // parse nextflow.config file
-          if (configRes){
-            fetch("/api/v1/parse_nextflow_config", {
-              method: "POST",
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({nextflow_config: configRes})
-            })
-            .then(handleError)
-            .then(data => {
-              setNextflowConfig(data);
-              // set the profile selector to the workgroup profile, if exists
-              const profile_list = Object.keys(data.config.profiles);
-              const default_workgroup_profile = userProfile.selectedWorkgroup.default_profile
-              if (profile_list.indexOf(default_workgroup_profile) > -1){
-                setNextflowProfile(default_workgroup_profile)
-              }
-            })
-            .catch(error => {console.log(error)})
-          }
-        })
-      } catch(err) {
-        console.log(err)
+        }
       }
+
+      fetchData(workflowUrl, workflowHash)      
+
     }, [workflowUrl, workflowHash, userProfile])
 
 
     const {arn} = parse(props.location.search);
-
+    console.log(mode, templateSchema)
     useEffect(
         // fill in form if prior arn is passed in via query
         () => {
@@ -213,10 +192,10 @@ function TemplateLaunchForm(props) {
     }
     
     
-    const profile_selector = nextflowConfig 
+    const profile_selector = (nextflowConfig?.config != {}) 
       ? (<Form.Control as="select" required={true} value={nextflowProfile || "___disabled___"} onChange={(e) =>_handleProfileSelect(e.target.value)}>
           <option value="___disabled___" disabled>Please select a profile</option>
-          {Object.keys(nextflowConfig.config.profiles).map(p => <option key={p} value={p}>{p} {p == userProfile.selectedWorkgroup.default_profile ? "(Workgroup Default)" : null}</option>)}
+          {Object.keys(nextflowConfig?.config?.profiles || []).map(p => <option key={p} value={p}>{p} {p == userProfile.selectedWorkgroup.default_profile ? "(Workgroup Default)" : null}</option>)}
         </Form.Control>)
       : null;
 
@@ -259,7 +238,7 @@ function TemplateLaunchForm(props) {
                 </Col>
               </Form.Group>
             }
-            {workflowUrl &&
+            {workflowUrl && nextflowConfig?.config !== {} &&
               <div>
                 <Card className='form-well'>
                 <Card.Title className='well-title'>Workflow Parameters</Card.Title>
@@ -269,8 +248,8 @@ function TemplateLaunchForm(props) {
                     {mode === "template" && <span style={{fontWeight: "400", fontStyle: "italic", color: "#999"}}>* indicates required field</span>}
                   </Form.Label>
                   <Col sm={9}>
-                    <Tabs defaultActiveKey={mode} id="params-tabs" transition={false} className='mb-2'>
-                      {mode === "template" && 
+                    <Tabs defaultActiveKey={"template"} id="params-tabs" transition={false} className='mb-2'>
+                      {mode === "template" &&
                         <Tab eventKey="template" title="Template" disabled={uploadParams !== null}>
                           <SchemaForm schema={templateSchema}
                               formData={jsonParams}
@@ -299,6 +278,7 @@ function TemplateLaunchForm(props) {
                       <Tab eventKey="upload" title="Upload">
                         <UploadEditor fileContents={uploadParams} setFileContents={setUploadParams}/>
                       </Tab>
+                      <Tab eventKey="none"></Tab>
                     </Tabs>
                   </Col>
                 </Form.Group>
