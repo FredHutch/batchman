@@ -234,6 +234,10 @@ class WorkflowList(MethodView):
                                     "name": "NF_SESSION_CACHE_DIR",
                                     "value": env["NEXTFLOW_S3_SESSION_CACHE"]
                                 },
+                                {
+                                    "name": "GITLAB_TOKEN",
+                                    "value": current_app.config["GITLAB_TOKEN"]
+                                }
                                 *additional_env_vars
                             ],
                         }
