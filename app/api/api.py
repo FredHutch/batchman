@@ -237,7 +237,7 @@ class WorkflowList(MethodView):
                                 {
                                     "name": "GITLAB_TOKEN",
                                     "value": current_app.config["GITLAB_TOKEN"]
-                                }
+                                },
                                 *additional_env_vars
                             ],
                         }
