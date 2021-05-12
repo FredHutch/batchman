@@ -90,7 +90,16 @@ application_policy = iam.ManagedPolicy(
                     Join("", ["arn:aws:iam::", Ref("AWS::AccountId"), ":role/EcsTaskExecutionRoleForNextflowRunner"]),
                     Join("", ["arn:aws:iam::", Ref("AWS::AccountId"), ":role/nextflow-fargate-runner-role"])
                 ]
-            )
+            ),
+            Statement(
+                Effect=Allow,
+                Action=[
+                    awacs_sm.GetSecretValue,
+                ],
+                Resource=[
+                    Join("", ["arn:aws:secretsmanager:us-west-2:", Ref("AWS::AccountId"), ":secret:/app/batchbot/*"])
+                ],
+            ),
         ]
     )
 )
