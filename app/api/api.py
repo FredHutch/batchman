@@ -176,8 +176,11 @@ class WorkflowList(MethodView):
             params_file_loc = "%s/%s/%s/params.json" % (env["NEXTFLOW_S3_SCRIPTS"], uuid_key[0:2], uuid_key)
             try:
                 self._upload_to_s3(params_file_loc, args["nextflow_params"])
-            except botocore.exceptions.ClientError:
-                return jsonify({"error": "unable to save params file."}), 500
+            except botocore.exceptions.ClientError as e:
+                return jsonify({
+                    "error": "unable to save params file.",
+                    "msg": e,
+                }), 500
             nextflow_options.append("-params-file params.json")
             additional_env_vars.append({"name": "NF_PARAMS_FILE", "value": params_file_loc})
         
