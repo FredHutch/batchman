@@ -2,6 +2,7 @@ from troposphere import Template, Ref, Tags, Join, GetAtt, Parameter, Output
 import troposphere.rds as rds
 import troposphere.iam as iam
 import troposphere.secretsmanager as secretsmanager
+from awacs import secretsmanager as awacs_sm
 
 from awacs.aws import (Action, Allow, Deny, Policy, PolicyDocument, Principal, 
     Statement, Condition, IpAddress)
