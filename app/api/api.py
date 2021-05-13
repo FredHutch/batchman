@@ -179,7 +179,9 @@ class WorkflowList(MethodView):
             except botocore.exceptions.ClientError as e:
                 return jsonify({
                     "error": "unable to save params file.",
-                    "msg": e,
+                    "msg": str(e),
+                    "params": args["nextflow_params"],
+                    "location": params_file_loc,
                 }), 500
             nextflow_options.append("-params-file params.json")
             additional_env_vars.append({"name": "NF_PARAMS_FILE", "value": params_file_loc})
