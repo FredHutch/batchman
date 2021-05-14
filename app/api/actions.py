@@ -65,7 +65,7 @@ def get_remote_file(url, file, hash):
         return requests.get(f"{url}/{hash}/{file}")
     if "gitlab.labmed.uw.edu" in url:
         headers = {
-            "PRIVATE-TOKEN": current_app.config["GITLAB_TOKEN"] #"ovAFK5zoUhxYBEnA2ef9"
+            "PRIVATE-TOKEN": current_app.config["GITLAB_TOKEN"]
         }
         # the passed URL will look like this:
         #   https://gitlab.labmed.uw.edu/uwlabmed/crux-pipeline
